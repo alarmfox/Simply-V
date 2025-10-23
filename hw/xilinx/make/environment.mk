@@ -2,7 +2,7 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Description:
-#    Hold all the environment variables for Xilinx tools.
+#    Hold all the environment variables for Xilinx tools and PCIe offsets.
 
 # Basic variables for Vivado
 XILINX_VIVADO_CMD ?= vivado
@@ -35,8 +35,8 @@ XILINX_COMMON_IP_LIST_XCI   := $(foreach ip,${XILINX_COMMON_IP_LIST},${XILINX_IP
 XILINX_HPC_IP_LIST_XCI      := $(foreach ip,${XILINX_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 XILINX_EMBEDDED_IP_LIST_XCI := $(foreach ip,${XILINX_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 CUSTOM_COMMON_IP_LIST_XCI   := $(foreach ip,${CUSTOM_COMMON_IP_LIST},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_HPC_IP_LIST_XCI      := $(foreach ip,${CUSTOM_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_EMBEDDED_IP_LIST_XCI := $(foreach ip,${CUSTOM_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+CUSTOM_HPC_IP_LIST_XCI      := $(foreach ip,${CUSTOM_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+CUSTOM_EMBEDDED_IP_LIST_XCI := $(foreach ip,${CUSTOM_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 
 # Board-independent XCI lists
 XILINX_IP_LIST_XCI := ${XILINX_COMMON_IP_LIST_XCI}
@@ -131,3 +131,7 @@ XILINX_VIVADO_ENV ?=                                \
 # Package Vivado command in a single variable
 XILINX_VIVADO := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode ${XILINX_VIVADO_MODE}
 XILINX_VIVADO_BATCH := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode batch
+
+# PCIe device and address
+PCIE_BDF ?= 01:00.0 # TODO: remove this and find the PCIE_BDF automatically
+PCIE_BAR ?= 0x$(shell lspci -vv -s ${PCIE_BDF} | grep Region | awk '{print $$5}')
