@@ -2,7 +2,7 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Description:
-#    Hold all the environment variables for Xilinx tools.
+#    Hold all the environment variables for Xilinx tools and PCIe offsets.
 
 # Basic variables for Vivado
 XILINX_VIVADO_CMD ?= vivado
@@ -35,8 +35,8 @@ XILINX_COMMON_IP_LIST_XCI   := $(foreach ip,${XILINX_COMMON_IP_LIST},${XILINX_IP
 XILINX_HPC_IP_LIST_XCI      := $(foreach ip,${XILINX_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 XILINX_EMBEDDED_IP_LIST_XCI := $(foreach ip,${XILINX_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 CUSTOM_COMMON_IP_LIST_XCI   := $(foreach ip,${CUSTOM_COMMON_IP_LIST},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_HPC_IP_LIST_XCI      := $(foreach ip,${CUSTOM_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_EMBEDDED_IP_LIST_XCI := $(foreach ip,${CUSTOM_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+CUSTOM_HPC_IP_LIST_XCI      := $(foreach ip,${CUSTOM_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+CUSTOM_EMBEDDED_IP_LIST_XCI := $(foreach ip,${CUSTOM_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 
 # Board-independent XCI lists
 XILINX_IP_LIST_XCI := ${XILINX_COMMON_IP_LIST_XCI}
@@ -48,16 +48,6 @@ ifeq (${SOC_CONFIG}, hpc)
     XILINX_IP_LIST_XCI     += ${XILINX_HPC_IP_LIST_XCI}
     CUSTOM_IP_LIST         += ${CUSTOM_HPC_IP_LIST}
     CUSTOM_IP_LIST_XCI     += ${CUSTOM_HPC_IP_LIST_XCI}
-    # Remove Microblaze-V and Microblaze Debug Module V when building for au280
-    # TODO55: quick workaround for PR 146, extend this for all selectable IPs
-    ifeq (${BOARD}, au280)
-        FILTER_IP                 := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
-        FILTER_IP_XCI             := $(foreach ip,${FILTER_IP},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-        TMP_XILINX_IP_LIST        := ${XILINX_IP_LIST}
-        TMP_XILINX_IP_LIST_XCI    := ${XILINX_IP_LIST_XCI}
-        XILINX_IP_LIST            := $(filter-out $(FILTER_IP),$(TMP_XILINX_IP_LIST))
-        XILINX_IP_LIST_XCI        := $(filter-out $(FILTER_IP_XCI),$(TMP_XILINX_IP_LIST_XCI))
-    endif
 else ifeq (${SOC_CONFIG}, embedded)
     XILINX_IP_LIST         += ${XILINX_EMBEDDED_IP_LIST}
     XILINX_IP_LIST_XCI     += ${XILINX_EMBEDDED_IP_LIST_XCI}
@@ -65,6 +55,17 @@ else ifeq (${SOC_CONFIG}, embedded)
     CUSTOM_IP_LIST_XCI     += ${CUSTOM_EMBEDDED_IP_LIST_XCI}
 else
 $(error "Unsupported config ${SOC_CONFIG}")
+endif
+
+# Remove Microblaze-V and Microblaze Debug Module V when building with Vivado < 2024
+# TODO55: quick workaround for PR 146, extend this for all selectable IPs
+ifeq ($(shell [ $(XILINX_VIVADO_VERSION) -lt 2024 ] && echo true),true)
+    FILTER_IP                 := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
+    FILTER_IP_XCI             := $(foreach ip,${FILTER_IP},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+    TMP_XILINX_IP_LIST        := ${XILINX_IP_LIST}
+    TMP_XILINX_IP_LIST_XCI    := ${XILINX_IP_LIST_XCI}
+    XILINX_IP_LIST            := $(filter-out $(FILTER_IP),$(TMP_XILINX_IP_LIST))
+    XILINX_IP_LIST_XCI        := $(filter-out $(FILTER_IP_XCI),$(TMP_XILINX_IP_LIST_XCI))
 endif
 
 # Concatenate/create the final IP lists
@@ -131,3 +132,7 @@ XILINX_VIVADO_ENV ?=                                \
 # Package Vivado command in a single variable
 XILINX_VIVADO := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode ${XILINX_VIVADO_MODE}
 XILINX_VIVADO_BATCH := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode batch
+
+# PCIe device and address
+PCIE_BDF ?= 01:00.0 # TODO: remove this and find the PCIE_BDF automatically
+PCIE_BAR ?= 0x$(shell lspci -vv -s ${PCIE_BDF} | grep Region | awk '{print $$5}')
