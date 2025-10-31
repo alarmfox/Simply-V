@@ -23,7 +23,6 @@ KERNEL_SRCS  := $(wildcard $(KERNEL_DIR)/*.c) \
                  $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.c) \
                  $(wildcard $(KERNEL_DIR)/portable/MemMang/heap_1.c)
 STARTUP_SRCS := startup.S $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.S)
-#STARTUP_SRCS := $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.S)
 
 SRCS := $(APP_SRCS) $(KERNEL_SRCS) $(STARTUP_SRCS)
 OBJS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(patsubst %.S,$(BUILD_DIR)/%.o,$(SRCS)))
@@ -33,15 +32,20 @@ OBJS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(patsubst %.S,$(BUILD_DIR)/%.o,$(SRCS))
 ###############################################################################
 INCLUDES := -I. \
             -I$(KERNEL_DIR)/include \
+	    -I$(SW_SOC_ROOT)/lib/uninasoc/inc \
+	    -I$(SW_SOC_ROOT)/lib/tinyio/inc \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RISCV_no_extensions
 
 ###############################################################################
 # Compilation flags
 ###############################################################################
-CFLAGS  := -Wall -O0 -ffreestanding -nostdlib -march=rv32ima_zicsr -mabi=ilp32 -g
+CFLAGS  := -Wall -Wextra -O0 -ffreestanding -nostdlib -march=rv32ima_zicsr -mabi=ilp32 -g
 CFLAGS  += $(INCLUDES)
+CFLAGS  += -DportasmHANDLE_INTERRUPT=_ext_handler
+
 LDFLAGS := -Tlinker.ld -lc -lgcc
+LDFLAGS += $(SW_SOC_ROOT)/lib/uninasoc/lib/libuninasoc.a $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
 
 ###############################################################################
 # Default rule

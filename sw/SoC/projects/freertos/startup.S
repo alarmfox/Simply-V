@@ -46,9 +46,9 @@ _reset_handler:
     la    sp, _stack_start
 
     /* Set mtvec to vectored mode (base | 1) so trap vectors work. */
-    la    t0, _trap_vectors_start
-    li    t1, 1
-    or    t0, t0, t1
+    la    t0, freertos_risc_v_trap_handler
+    ; li    t1, 1
+    ; or    t0, t0, t1
     csrw  mtvec, t0
 
     /* Jump to C entry (_start). Keep interrupts disabled here; enable later when ready. */
