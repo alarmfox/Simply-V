@@ -1,23 +1,45 @@
 # Simply-V FreeRTOS
 
+> [!WARNING]
+> `freertos` expects the `source $ROOT_DIR/settings.sh` to be executed.
+
 The FreeRTOS integration in Simply-V works by linking applications against the FreeRTOS kernel. The
 directory structure is:
 - kernel: the FreeRTOS-kernel. Provides the `tasks.c` `heap_*.c` `queue.c` etc. and platform specific ports
 - app: user applications directory. Each application must live in each own directory. The application
     directory is structured like this:
-    - app/<app-name-1>/
-    - app/<app-name-2>/
+    - app/\<app-name-1\>/
+    - app/\<app-name-2\>/
 - FreeRTOSConfig.h: FreeRTOS configuration.
-- startups.S: startup file to setup `freertos_riscv_trap_handler`, `_reset_handler` and jump to main.
+- startups.S: startup file to setup `freertos_risc_v_trap_handler`, `_reset_handler` and jump to main.
 
 The provided `Makefile` compiles all the applications under `app/` as separated elf in `build/<app-name>/<app-name>.elf.`
+
+## Startup and linkerscript
+The `startup.S` installs the `freertos_risc_v_trap_handler` and configures the reset handler. 
+For now, the `freertos_risc_v_trap_handler` is installed use a direct mode.
+
+The `_reset_handler` performs the following actions:
+- reset registers
+- install the trap handler (direct mode)
+- initializes the stack to `_stack_start`
+- jumps into main
+
+```asm
+/* Set mtvec to direct mode so trap vectors work. */
+la    t0, freertos_risc_v_trap_handler
+csrw  mtvec, t0
+```
+
+The `linker.ld`  and defines `.bss`, `.data`, `.rodata` sections, but relies on the
+`${ROOT_DIR}/sw/SoC/common/UninaSoC.ld` for memory and peripheral symbols.
 
 ## Usage
 The users are expected to run the application in from the `${ROOT_DIR}/sw/SoC/project/freertos` directory. First, 
 build all applications. The following variables can be used:
 - DEBUB=1: compiles with `-g` for debug symbols;
 - USE_UNINASOC=1: enables the linking with `uninasoc` and `tinyio` static libraries. It also adds 
-a `-DUSE_UNINASOC` for optionally use it in user programs.
+a `-DUSE_UNINASOC` for optional use in user programs.
 
 ```sh
 make DEBUG=1
@@ -56,14 +78,14 @@ make DEBUG=1 USE_UNINASOC=1
 
 Then you can use your code like this:
 ```c
-```
 #ifdef USE_UNINASOC
     uninasoc_init();
     printf("SIMPLY-V FreeRTOS DEMO!\n\r");
 #endif // USE_UNINASOC
+```
 
 ## Development
-To ease the development process, users can use the provided `.clangd` file to get completions in 
+To ease the development process, users can use the following `.clangd` file to get completions in 
 editors like VSCode.
 
 ```
@@ -75,4 +97,19 @@ CompileFlags:
     - "-Ikernel/include/"
     - "-I../../lib/uninasoc/inc/"
     - "-I../../lib/tinyio/inc/"
+```
+
+More advanced tools can require a `compile_commands.json` which can be generated using 
+[bear](https://github.com/rizsotto/Bear):
+
+```sh
+make clean
+bear -- make DEBUG=1
+```
+
+And include the `compile_commands.json` in the `.clangd`:
+
+```
+CompileFlags: 
+  CompilationDatabase: .
 ```
