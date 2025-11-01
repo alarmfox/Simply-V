@@ -12,15 +12,18 @@ directory structure is:
 
 The provided `Makefile` compiles all the applications under `app/` as separated elf in `build/<app-name>/<app-name>.elf.`
 
-## Running an application
+## Usage
 The users are expected to run the application in from the `${ROOT_DIR}/sw/SoC/project/freertos` directory. First, 
-build all applications:
+build all applications. The following variables can be used:
+- DEBUB=1: compiles with `-g` for debug symbols;
+- USE_UNINASOC=1: enables the linking with `uninasoc` and `tinyio` static libraries. It also adds 
+a `-DUSE_UNINASOC` for optionally use it in user programs.
 
 ```sh
-make
+make DEBUG=1
 ```
 
-Then load the applications on the target:
+Load the application on the target:
 ```sh
 (gdb) file build/basic-two-tasks/basic-two-tasks.elf
 A program is being debugged already.
@@ -45,7 +48,19 @@ Breakpoint 1, main () at app/basic-two-tasks/main.c:129
 ```
 
 ## Experimental `uninasoc` linking
-The linking with `uninasoc` is experimental and can lead to bigger executable size.
+The linking with `uninasoc` is experimental and can lead to bigger executable size. Enable the `uninasoc`
+HAL by passing the `USE_UNINASOC=1` make flags.
+```sh
+make DEBUG=1 USE_UNINASOC=1
+```
+
+Then you can use your code like this:
+```c
+```
+#ifdef USE_UNINASOC
+    uninasoc_init();
+    printf("SIMPLY-V FreeRTOS DEMO!\n\r");
+#endif // USE_UNINASOC
 
 ## Development
 To ease the development process, users can use the provided `.clangd` file to get completions in 
