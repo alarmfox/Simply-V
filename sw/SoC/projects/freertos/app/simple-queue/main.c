@@ -17,26 +17,27 @@ static void prvQueueMyTask1(void *pvParameters) {
     const unsigned long ulValueToSend = 100UL;
 
     configASSERT(((unsigned long)pvParameters) == mainQUEUE_SEND_PARAMETER);
-    
+ 
     size_t free_heap=0;
     free_heap=xPortGetFreeHeapSize();
     configASSERT( free_heap > 0 );
 
     while (1) {
-    
+ 
         free_heap=xPortGetFreeHeapSize();
         configASSERT( free_heap > 0 );
-    
+ 
         xQueueSend(xQueue, &ulValueToSend, 0U);
         taskYIELD();
     }
 }
 
 static void prvQueueMyTask2(void *pvParameters) {
+    (void) pvParameters;
     while (1) {
         unsigned long ulReceivedValue;
         xQueueReceive(xQueue, &ulReceivedValue, portMAX_DELAY);
-        
+ 
         size_t free_heap=0;
         free_heap=xPortGetFreeHeapSize();
         configASSERT( free_heap > 0 );
@@ -53,7 +54,9 @@ void vAssertCalled(const char *file, int line) {
 
      const char *f=file;
      int l=line;
-     
+     (void) f;
+     (void) l;
+     __asm("ebreak");
 }
 
 void vPortSetupTimerInterrupt( void ){

@@ -1,8 +1,17 @@
 #include "FreeRTOS.h"
 #include "task.h"
+
+#ifdef USE_UNINASOC
 #include "uninasoc.h"
 
-#define SOURCES_NUM 3 // regardless of embedded/hpc
+#define SOURCES_NUM 3
+static xlnx_tim_t timer = {
+    .base_addr = TIM0_BASEADDR,
+    .counter = 20000000,
+    .reload_mode = TIM_RELOAD_AUTO,
+    .count_direction = TIM_COUNT_DOWN
+};
+#endif // USE_UNINASOC
 
 #define TASK1_PRIORITY (tskIDLE_PRIORITY + 1)
 #define TASK2_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -10,44 +19,40 @@
 #define TASK1_PARAMETER (1)
 #define TASK2_PARAMETER (2)
 
-xlnx_tim_t timer = {
-    .base_addr = TIM0_BASEADDR,
-    .counter = 20000000,
-    .reload_mode = TIM_RELOAD_AUTO,
-    .count_direction = TIM_COUNT_DOWN
-};
 
 static void Task1(void *pvParameters) {
 
-    uint32_t a = 0;
-    uint32_t b = 0;
+    uint32_t a;
+    uint32_t b = 3;
+
     configASSERT( ( ( uint32_t ) pvParameters ) == TASK1_PARAMETER );
-    size_t free_heap=0;
-    free_heap=xPortGetFreeHeapSize();
+    size_t free_heap = xPortGetFreeHeapSize();
     configASSERT( free_heap > 0 );
 
     while (1) {
-    	free_heap=xPortGetFreeHeapSize();
+    	free_heap = xPortGetFreeHeapSize();
         configASSERT( free_heap > 0 );
-    	a=b+(uint32_t)pvParameters;
+    	a = b + (uint32_t) pvParameters;
+        (void) a;
         taskYIELD();
     }
 }
 
 static void Task2(void *pvParameters) {
 
-    uint32_t a = 0;
+    uint32_t a;
     uint32_t b = 3;
+    
     configASSERT( ( ( uint32_t ) pvParameters ) == TASK2_PARAMETER );
-    size_t free_heap=0;
-    free_heap=xPortGetFreeHeapSize();
+    size_t free_heap = xPortGetFreeHeapSize();
     configASSERT( free_heap > 0 );
 
     while (1) {
-    	    free_heap=xPortGetFreeHeapSize();
+    	    free_heap = xPortGetFreeHeapSize();
             configASSERT( free_heap > 0 );
-    
-	    a=b-(uint32_t)pvParameters;
+
+	    a = b - (uint32_t) pvParameters;
+            (void)a;
 	    taskYIELD();
    } 
 }
@@ -56,12 +61,15 @@ void vAssertCalled(const char *file, int line) {
 
      const char *f=file;
      int l=line;
+     (void) f;
+     (void) l;
      __asm("ebreak");
 }
 
 void vPortSetupTimerInterrupt(void){
+
+#ifdef USE_UNINASOC
     int ret;
-    
     uint32_t priorities[SOURCES_NUM] = { 1, 1, 1 };
     plic_init();
     plic_configure(priorities, SOURCES_NUM);
@@ -72,7 +80,7 @@ void vPortSetupTimerInterrupt(void){
 	printf("Cannot init TIMER\n\r");
 	return;
     }
-    
+ 
     ret = xlnx_tim_configure(&timer);
     if(ret != UNINASOC_OK) {
 	printf("Cannot configure TIMER\n\r");
@@ -90,45 +98,16 @@ void vPortSetupTimerInterrupt(void){
         printf("Cannot start timer\r\n");
 	return;
     }
-}
-
-void _ext_handler(void) {
-    // Interrupts are automatically disabled by the microarchitecture.
-    // Nested interrupts can be enabled manually by setting the IE bit in the mstatus register,
-    // but this requires careful handling of registers.
-    // Interrupts are automatically re-enabled by the microarchitecture when the MRET instruction is executed.
-
-    // In this example, the core is connected to PLIC target 1 line.
-    // Therefore, we need to access the PLIC claim/complete register 1 (base_addr + 0x200004).
-    // The interrupt source ID is obtained from the claim register.
-    uint32_t interrupt_id = plic_claim();
-    switch(interrupt_id){
-        case 0x0: // unused
-            break;
-        case 0x1:
-        #ifdef IS_EMBEDDED
-            // Not implemented, just clear to continue
-            //xlnx_gpio_in_clear_int();
-        #endif
-        break;
-        case 0x2:
-            // Not implemented, just clear to continue
-            //xlnx_tim_clear_int();
-            break;
-        default:
-            break;
-    }
-
-    // To notify the handler completion, a write-back on the claim/complete register is required.
-    plic_complete(interrupt_id);
+#endif // USE_UNINASOC
 }
 
 int main(){
 
-    // Init uninasoc HAL
+#ifdef USE_UNINASOC
     uninasoc_init();
-
     printf("SIMPLY-V FreeRTOS DEMO!\n\r");
+#endif // USE_UNINASOC
+
 
     // Create FreeRTOS Task
     BaseType_t mem_1=xTaskCreate(Task1,"t1", configMINIMAL_STACK_SIZE,

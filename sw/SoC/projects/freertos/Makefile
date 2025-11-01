@@ -29,8 +29,6 @@ KERNEL_OBJS := $(BUILD_DIR)/startup.o $(patsubst %.c,$(BUILD_DIR)/%.o,$(patsubst
 ###############################################################################
 INCLUDES := -I. \
             -I$(KERNEL_DIR)/include \
-            -I$(SW_SOC_ROOT)/lib/uninasoc/inc \
-            -I$(SW_SOC_ROOT)/lib/tinyio/inc \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RISCV_no_extensions
 
@@ -47,17 +45,25 @@ endif
 
 CFLAGS  := -march=$(ARCH) -mabi=$(ABI)
 CFLAGS  += -Wall -Wextra -O0 -ffreestanding -nostdlib
-CFLAGS  += $(INCLUDES)
+
+ifeq ($(USE_UNINASOC), 1)
+CFLAGS   += -DUSE_UNINASOC
+INCLUDES += -I$(SW_SOC_ROOT)/lib/uninasoc/inc \
+            -I$(SW_SOC_ROOT)/lib/tinyio/inc
+endif
 
 ifeq ($(DEBUG), 1)
 CFLAGS  += -g
 endif
 
+CFLAGS  += $(INCLUDES)
 ###############################################################################
 # Linker flags
 ###############################################################################
 LDFLAGS := -Tlinker.ld -lc -lgcc
+ifeq ($(USE_UNINASOC), 1)
 LDFLAGS += $(SW_SOC_ROOT)/lib/uninasoc/lib/libuninasoc.a $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
+endif
 
 ###############################################################################
 # Discover applications
@@ -94,13 +100,13 @@ $(BUILD_DIR)/$(1)/%.o: $(APP_DIR)/$(1)/%.S
 # Link rule for app '$(1)'
 $(BUILD_DIR)/$(1)/$(1).elf: $$(APP_OBJS_$(1)) $(KERNEL_OBJS)
 	@mkdir -p $(BUILD_DIR)/$(1)
-	@echo "  LD    $$@"
+	@echo "  LD    $$<"
 	@$(CC) $(CFLAGS) -o $$@ $$^ $(LDFLAGS)
 
 $(BUILD_DIR)/$(1)/$(1).bin: $(BUILD_DIR)/$(1)/$(1).elf
 	@mkdir -p $(BUILD_DIR)/$(1)
-	@echo "  OBJCOPY $$< -> $$@"
-	$(OBJCOPY) -O binary $$< $$@
+	@echo "  OBJCOPY $$<"
+	@$(OBJCOPY) -O binary $$< $$@
 endef
 
 # instantiate template for each app name (creates explicit targets)
