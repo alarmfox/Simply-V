@@ -17,7 +17,7 @@ The provided `Makefile` compiles all the applications under `app/` as separated 
 
 ## Startup and linkerscript
 The `startup.S` installs the `freertos_risc_v_trap_handler` and configures the reset handler. 
-For now, the `freertos_risc_v_trap_handler` is installed use a direct mode.
+For now, the `freertos_risc_v_trap_handler` is installed with direct mode.
 
 The `_reset_handler` performs the following actions:
 - reset registers
