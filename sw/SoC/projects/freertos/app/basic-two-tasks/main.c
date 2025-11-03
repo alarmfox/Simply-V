@@ -19,12 +19,12 @@ static void Task1(void *pvParameters) {
   uint32_t b = 3;
 
   configASSERT(((uint32_t)pvParameters) == TASK1_PARAMETER);
-  size_t free_heap = xPortGetFreeHeapSize();
-  configASSERT(free_heap > 0);
+  size_t free_heap;
 
   while (1) {
     free_heap = xPortGetFreeHeapSize();
     configASSERT(free_heap > 0);
+
     a = b + (uint32_t)pvParameters;
     (void)a;
 
