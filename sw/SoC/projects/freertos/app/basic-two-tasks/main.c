@@ -2,13 +2,9 @@
 #include "task.h"
 
 #ifdef USE_UNINASOC
+
 #include "uninasoc.h"
 
-#define SOURCES_NUM 3
-static xlnx_tim_t timer = {.base_addr = TIM0_BASEADDR,
-                           .counter = 20000000,
-                           .reload_mode = TIM_RELOAD_AUTO,
-                           .count_direction = TIM_COUNT_DOWN};
 #endif // USE_UNINASOC
 
 #define TASK1_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -31,6 +27,11 @@ static void Task1(void *pvParameters) {
     configASSERT(free_heap > 0);
     a = b + (uint32_t)pvParameters;
     (void)a;
+
+#ifdef USE_UNINASOC
+    printf("Hello from task 1\n\r");
+#endif // USE_UNINASOC
+
     taskYIELD();
   }
 }
@@ -50,6 +51,11 @@ static void Task2(void *pvParameters) {
 
     a = b - (uint32_t)pvParameters;
     (void)a;
+
+#ifdef USE_UNINASOC
+    printf("Hello from task 2\r\n");
+#endif // USE_UNINASOC
+
     taskYIELD();
   }
 }
@@ -64,38 +70,9 @@ void vAssertCalled(const char *file, int line) {
 }
 
 void vPortSetupTimerInterrupt(void) {
-
-#ifdef USE_UNINASOC
-  int ret;
-  uint32_t priorities[SOURCES_NUM] = {1, 1, 1};
-  plic_init();
-  plic_configure(priorities, SOURCES_NUM);
-  plic_enable_all();
-
-  ret = xlnx_tim_init(&timer);
-  if (ret != UNINASOC_OK) {
-    printf("Cannot init TIMER\n\r");
-    return;
-  }
-
-  ret = xlnx_tim_configure(&timer);
-  if (ret != UNINASOC_OK) {
-    printf("Cannot configure TIMER\n\r");
-    return;
-  }
-
-  ret = xlnx_tim_enable_int(&timer);
-  if (ret != UNINASOC_OK) {
-    printf("Cannot enable timer interrupt\r\n");
-    return;
-  }
-
-  ret = xlnx_tim_start(&timer);
-  if (ret != UNINASOC_OK) {
-    printf("Cannot start timer\r\n");
-    return;
-  }
-#endif // USE_UNINASOC
+  // define if you need to set the timer interrupt,otherwise an empty definition
+  // is still necessary to overwrite the weak definition in port.c and to avoid
+  // unwanted jumps to reset handler
 }
 
 int main() {

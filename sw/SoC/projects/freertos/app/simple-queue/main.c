@@ -2,6 +2,12 @@
 #include "queue.h"
 #include "task.h"
 
+#ifdef USE_UNINASOC
+
+#include "uninasoc.h"
+
+#endif // USE_UNINASOC
+
 #define mainQUEUE_RECEIVE_TASK_PRIORITY (tskIDLE_PRIORITY + 1)
 #define mainQUEUE_SEND_TASK_PRIORITY (tskIDLE_PRIORITY + 1)
 
@@ -59,7 +65,6 @@ void vAssertCalled(const char *file, int line) {
 }
 
 void vPortSetupTimerInterrupt(void) {
-
   // define if you need to set the timer interrupt,otherwise an empty definition
   // is still necessary to overwrite the weak definition in port.c and to avoid
   // unwanted jumps to reset handler
@@ -68,7 +73,6 @@ void vPortSetupTimerInterrupt(void) {
 int main() {
 
   /* Insert your code here */
-
   xQueue = xQueueCreate(mainQUEUE_LENGTH, sizeof(unsigned long));
   configASSERT(xQueue != NULL);
 
