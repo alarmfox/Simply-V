@@ -1,6 +1,7 @@
     /* ultra-minimal startup.S for RISC-V */
     .extern freertos_risc_v_trap_handler
     .section .vector_table, "ax"
+    .align 4
     .option norvc
     /* Entry 0 -> reset handler, remaining entries -> freertos_risc_v_trap_handler */
     jal x0, _reset_handler
@@ -46,8 +47,9 @@ _reset_handler:
     /* Initialize stack pointer first */
     la    sp, _stack_start
 
-    /* Set mtvec trap freertos_risc_v_trap_handler work. */
+    /* Set mtvec trap freertos_risc_v_trap_handler VECTORED mode. */
     la    t0, freertos_risc_v_trap_handler
+    or    t0, t0, 1
     csrw  mtvec, t0
 
     /* Jump to C entry (_start). Keep interrupts disabled here; enable later when ready. */

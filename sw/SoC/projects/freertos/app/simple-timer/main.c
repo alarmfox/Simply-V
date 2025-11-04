@@ -1,19 +1,13 @@
 #include "FreeRTOS.h"
 #include "task.h"
-
-extern void vExternalTimerTickHandler(void);
-
-#ifdef USE_UNINASOC
-
 #include "uninasoc.h"
-xlnx_tim_t timer = {
+
+static xlnx_tim_t timer = {
   .base_addr = TIM0_BASEADDR,
   .counter = 20000000,
   .reload_mode = TIM_RELOAD_AUTO,
   .count_direction = TIM_COUNT_DOWN
 };
-
-#endif // USE_UNINASOC
 
 #define TASK1_PRIORITY (tskIDLE_PRIORITY + 1)
 
@@ -34,10 +28,13 @@ static void Task(void *pvParameters) {
     a = b + (uint32_t)pvParameters;
     (void)a;
 
-#ifdef USE_UNINASOC
     printf("Hello from Task\n\r");
-#endif // USE_UNINASOC
   }
+}
+
+void vExternalTimerTickHandler(void) {
+  xlnx_tim_clear_int(&timer);
+  xTaskIncrementTick();
 }
 
 void freertos_risc_v_application_interrupt_handler(void) {
@@ -66,7 +63,6 @@ void vAssertCalled(const char *file, int line) {
 // define if you need to set the timer interrupt,otherwise an empty definition
 // is still necessary to overwrite the weak definition in port.c and to avoid
 // unwanted jumps to reset handler
-#ifdef USE_UNINASOC
 void vPortSetupTimerInterrupt(void) {
   int ret;
   ret = xlnx_tim_enable_int(&timer);
@@ -85,16 +81,9 @@ void vPortSetupTimerInterrupt(void) {
   // MEI (External Interrupt)
   __asm volatile ( "csrs mie, %0" ::"r" ( 0x800 ) );
 }
-#else
-// Define a function to configure the timer
-void vPortSetupTimerInterrupt(void) {
-
-}
-#endif // USE_UNINASOC
 
 int main() {
 
-#ifdef USE_UNINASOC
   int ret;
   uint32_t priorities[3] = { 1, 1, 1 };
 
@@ -113,7 +102,6 @@ int main() {
   }
 
   printf("SIMPLY-V FreeRTOS DEMO!\n\r");
-#endif // USE_UNINASOC
 
   // Create FreeRTOS Task
   BaseType_t mem_1 = xTaskCreate(Task, "t1", configMINIMAL_STACK_SIZE,

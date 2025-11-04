@@ -1,11 +1,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
-
-#ifdef USE_UNINASOC
-
 #include "uninasoc.h"
-
-#endif // USE_UNINASOC
 
 #define TASK1_PRIORITY (tskIDLE_PRIORITY + 1)
 #define TASK2_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -28,9 +23,7 @@ static void Task1(void *pvParameters) {
     a = b + (uint32_t)pvParameters;
     (void)a;
 
-#ifdef USE_UNINASOC
     printf("Hello from task 1\n\r");
-#endif // USE_UNINASOC
 
     taskYIELD();
   }
@@ -52,9 +45,7 @@ static void Task2(void *pvParameters) {
     a = b - (uint32_t)pvParameters;
     (void)a;
 
-#ifdef USE_UNINASOC
     printf("Hello from task 2\r\n");
-#endif // USE_UNINASOC
 
     taskYIELD();
   }
@@ -77,10 +68,8 @@ void vPortSetupTimerInterrupt(void) {
 
 int main() {
 
-#ifdef USE_UNINASOC
   uninasoc_init();
   printf("SIMPLY-V FreeRTOS DEMO!\n\r");
-#endif // USE_UNINASOC
 
   // Create FreeRTOS Task
   BaseType_t mem_1 = xTaskCreate(Task1, "t1", configMINIMAL_STACK_SIZE,

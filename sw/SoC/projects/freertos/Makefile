@@ -46,11 +46,8 @@ endif
 CFLAGS  := -march=$(ARCH) -mabi=$(ABI)
 CFLAGS  += -Wall -Wextra -O0 -ffreestanding -nostdlib
 
-ifeq ($(USE_UNINASOC), 1)
-CFLAGS   += -DUSE_UNINASOC
 INCLUDES += -I$(SW_SOC_ROOT)/lib/uninasoc/inc \
             -I$(SW_SOC_ROOT)/lib/tinyio/inc
-endif
 
 ifeq ($(DEBUG), 1)
 CFLAGS  += -g
@@ -61,9 +58,7 @@ CFLAGS  += $(INCLUDES)
 # Linker flags
 ###############################################################################
 LDFLAGS := -Tlinker.ld -lc -lgcc
-ifeq ($(USE_UNINASOC), 1)
 LDFLAGS += $(SW_SOC_ROOT)/lib/uninasoc/lib/libuninasoc.a $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
-endif
 
 ###############################################################################
 # Discover applications

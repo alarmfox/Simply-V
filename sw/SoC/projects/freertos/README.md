@@ -17,17 +17,18 @@ The provided `Makefile` compiles all the applications under `app/` as separated 
 
 ## Startup and linkerscript
 The `startup.S` installs the `freertos_risc_v_trap_handler` and configures the reset handler. 
-For now, the `freertos_risc_v_trap_handler` is installed with direct mode.
+For now, the `freertos_risc_v_trap_handler` is installed with vectored mode.
 
 The `_reset_handler` performs the following actions:
 - reset registers
-- install the trap handler (direct mode)
+- install the trap handler (vectored mode)
 - initializes the stack to `_stack_start`
 - jumps into main
 
 ```asm
-/* Set mtvec to direct mode so trap vectors work. */
+/* Set mtvec to freertos_risc_v_trap_handler in vectored mode. */
 la    t0, freertos_risc_v_trap_handler
+or    t0, t0, 1
 csrw  mtvec, t0
 ```
 
@@ -38,8 +39,6 @@ The `linker.ld`  and defines `.bss`, `.data`, `.rodata` sections, but relies on 
 The users are expected to run the application in from the `${ROOT_DIR}/sw/SoC/project/freertos` directory. First, 
 build all applications. The following variables can be used:
 - DEBUB=1: compiles with `-g` for debug symbols;
-- USE_UNINASOC=1: enables the linking with `uninasoc` and `tinyio` static libraries. It also adds 
-a `-DUSE_UNINASOC` for optional use in user programs.
 
 ```sh
 make DEBUG=1
@@ -67,21 +66,6 @@ Continuing.
 
 Breakpoint 1, main () at app/basic-two-tasks/main.c:129
 129         uninasoc_init();
-```
-
-## Experimental `uninasoc` linking
-The linking with `uninasoc` is experimental and can lead to bigger executable size. Enable the `uninasoc`
-HAL by passing the `USE_UNINASOC=1` make flags.
-```sh
-make DEBUG=1 USE_UNINASOC=1
-```
-
-Then you can use your code like this:
-```c
-#ifdef USE_UNINASOC
-    uninasoc_init();
-    printf("SIMPLY-V FreeRTOS DEMO!\n\r");
-#endif // USE_UNINASOC
 ```
 
 ## Development
