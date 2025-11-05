@@ -157,8 +157,7 @@ int main() {
 
   uninasoc_init();
 
-  printf("Hello from Simply-V\n\r");
-  printf("=============== Producer - Consumer with Timer ==================\n\r");
+  printf("================= Simply-V Producer - Consumer with Timer ==================\n\r");
 
   xQueue = xQueueCreate(QUEUE_LENGTH, sizeof(uint32_t));
   configASSERT(xQueue != NULL);
