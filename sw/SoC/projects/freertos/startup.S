@@ -3,9 +3,9 @@
     .section .vector_table, "ax"
     .align 4
     .option norvc
-    /* Entry 0 -> reset handler, remaining entries -> freertos_risc_v_trap_handler */
-    jal x0, _reset_handler
-    .rept 31
+    /* In vectored mode all entries must go to -> freertos_risc_v_trap_handler */
+    /* https://www.freertos.org/Using-FreeRTOS-on-RISC-V#interrupt-system-stack-setup */
+    .rept 32
     jal x0, freertos_risc_v_trap_handler
     .endr
 
@@ -45,12 +45,13 @@ _reset_handler:
     mv t6, zero
 
     /* Initialize stack pointer first */
-    la    sp, _stack_start
+    la    sp, __stack_top
 
     /* Set mtvec trap freertos_risc_v_trap_handler VECTORED mode. */
-    la    t0, freertos_risc_v_trap_handler
-    or    t0, t0, 1
-    csrw  mtvec, t0
+    la a0, _vector_table_start  # Load vector table base address
+    li a1, 1                    # Set vectored mode bit
+    or a1, a1, a0
+    csrw mtvec, a1              # Commit on mtvec register
 
     /* Jump to C entry (_start). Keep interrupts disabled here; enable later when ready. */
     j     _start
