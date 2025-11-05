@@ -2,7 +2,7 @@
 # Toolchain
 ###############################################################################################
 XLEN          ?= 32
-RV_PREFIX     = riscv$(XLEN)-unknown-elf-
+RV_PREFIX     ?= riscv$(XLEN)-unknown-elf-
 CC            := $(RV_PREFIX)gcc
 OBJCOPY       := $(RV_PREFIX)objcopy
 
@@ -27,11 +27,6 @@ KERNEL_OBJS := $(BUILD_DIR)/startup.o $(patsubst %.c,$(BUILD_DIR)/%.o,$(patsubst
 ###############################################################################################
 # CFLAGS
 ###############################################################################################
-INCLUDES := -I. \
-            -I$(KERNEL_DIR)/include \
-            -I$(KERNEL_DIR)/portable/GCC/RISC-V \
-            -I$(KERNEL_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RISCV_no_extensions
-
 ARCH    := rv$(XLEN)ima
 ARCH    := $(addsuffix _zicsr_zifencei, $(ARCH))
 
@@ -45,7 +40,12 @@ endif
 
 CFLAGS  := -march=$(ARCH) -mabi=$(ABI)
 CFLAGS  += -Wall -Wextra -O0 -ffreestanding -nostdlib
-INCLUDES += -I$(SW_SOC_ROOT)/lib/uninasoc/inc \
+
+INCLUDES := -I. \
+            -I$(KERNEL_DIR)/include \
+            -I$(KERNEL_DIR)/portable/GCC/RISC-V \
+            -I$(KERNEL_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RISCV_no_extensions \
+            -I$(SW_SOC_ROOT)/lib/uninasoc/inc \
             -I$(SW_SOC_ROOT)/lib/tinyio/inc
 
 ifeq ($(DEBUG), 1)
