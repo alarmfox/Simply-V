@@ -139,7 +139,9 @@ linkerscript as mentioned [here](https://www.freertos.org/Using-FreeRTOS-on-RISC
 
 ```
 __bram_end        = ORIGIN(BRAM) + LENGTH(BRAM);
-__stack_size      = 0x1000;
+__stack_top       = __bram_end - 0x10;
+__stack_size      = 0x1000; /* 4k */
+__stack_bottom    = __stack_top - __stack_size;
 
 /* https://www.freertos.org/Using-FreeRTOS-on-RISC-V#interrupt-system-stack-setup */
 __freertos_irq_stack_top = __stack_top;
