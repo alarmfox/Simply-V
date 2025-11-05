@@ -10,7 +10,7 @@ OBJCOPY       := $(RV_PREFIX)objcopy
 # Project structure
 ###############################################################################
 APP_DIR     := app
-KERNEL_DIR  := kernel
+KERNEL_DIR  := FreeRTOS-Kernel
 
 BUILD_DIR   := build
 
