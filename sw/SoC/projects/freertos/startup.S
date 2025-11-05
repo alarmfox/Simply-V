@@ -1,11 +1,20 @@
-    /* ultra-minimal startup.S for RISC-V */
+/*
+ * This is the entrypoint for a FreeRTOS application. This just initializes the vector table writing
+ * for each entry a the address of the freertos_risc_v_trap_handler (this is needed because Simply-V 
+ * uses vectored mode for interrupts). Main `_reset_handler` zeroes out all registers, writes to MTVEC 
+ * the base address of the vector_table and jumps to `_start` which calls the `main`.
+ *
+ * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
+ */
+
+    /* minimal startup.S for FreeRTOS-RISC-V */
     .extern freertos_risc_v_trap_handler
     .section .vector_table, "ax"
     .align 4
     .option norvc
-    /* Entry 0 -> reset handler, remaining entries -> freertos_risc_v_trap_handler */
-    jal x0, _reset_handler
-    .rept 31
+    /* In vectored mode all entries must point to -> freertos_risc_v_trap_handler */
+    /* https://www.freertos.org/Using-FreeRTOS-on-RISC-V#interrupt-system-stack-setup */
+    .rept 32
     jal x0, freertos_risc_v_trap_handler
     .endr
 
@@ -48,16 +57,13 @@ _reset_handler:
     la    sp, _stack_start
 
     /* Set mtvec trap freertos_risc_v_trap_handler VECTORED mode. */
-    la    t0, freertos_risc_v_trap_handler
-    or    t0, t0, 1
-    csrw  mtvec, t0
+    la a0, _vector_table_start  # Load vector table base address
+    li a1, 1                    # Set vectored mode bit
+    or a1, a1, a0
+    csrw mtvec, a1              # Commit on mtvec register
 
     /* Jump to C entry (_start). Keep interrupts disabled here; enable later when ready. */
     j     _start
-
-_default_handler:
-    /* simple infinite loop for unexpected traps */
-    j     _default_handler
 
     .global _start
 _start:
@@ -67,4 +73,5 @@ _start:
     call  main
 
     /* If main returns, hang */
-1:  j 1b
+_exit_wfi:
+  wfi
