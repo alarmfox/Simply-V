@@ -55,7 +55,7 @@ KERNEL_SRCS  := $(wildcard $(KERNEL_DIR)/*.c) \
 For now the SoC does not support a system timer. The SystemTick needs to be updated using a custom interrupt 
 handler. On the timer ISR we need to implement the logic decribed in the picture from [here](https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick).
 
-[![RTOS Tick](https://rcc.freertos.org/media/2018/TickISR.gif)](target-url)
+[![RTOS Tick](https://rcc.freertos.org/media/2018/TickISR.gif)](https://rcc.freertos.org/media/2018/TickISR.gif)
 
 This is done in the `vExternalTickIncrement()`:
 ```c
