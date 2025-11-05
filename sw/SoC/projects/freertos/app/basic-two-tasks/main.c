@@ -66,6 +66,24 @@ void vPortSetupTimerInterrupt(void) {
   // unwanted jumps to reset handler
 }
 
+#ifdef configCHECK_FOR_STACK_OVERFLOW
+/* Called if a task overflows its stack space */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
+  (void)xTask;
+  (void)pcTaskName;
+
+  __asm volatile ("ebreak");
+}
+#endif // configCHECK_FOR_STACK_OVERFLOW
+
+
+#ifdef configUSE_MALLOC_FAILED_HOOK
+/* Called if pvPortMalloc() fails (heap exhausted) */
+void vApplicationMallocFailedHook(void) {
+    __asm volatile ("ebreak");
+}
+#endif // configUSE_MALLOC_FAILED_HOOK
+
 int main() {
 
   uninasoc_init();
