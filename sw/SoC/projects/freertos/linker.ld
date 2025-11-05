@@ -16,9 +16,9 @@ trap_vector_start is the base address for the interrupt handlers
 */
 
 __bram_end        = ORIGIN(BRAM) + LENGTH(BRAM);
-__stack_size      = 0x1000;
 __stack_top       = __bram_end - 0x10;
-__stack_bottom    = __stack_top  - __stack_size;
+__stack_size      = 0x1000; /* 4k */
+__stack_bottom    = __stack_top - __stack_size;
 
 /* https://www.freertos.org/Using-FreeRTOS-on-RISC-V#interrupt-system-stack-setup */
 __freertos_irq_stack_top = __stack_top;
@@ -71,5 +71,5 @@ ASSERT(__stack_bottom >= __bss_end,
 ASSERT(MAX(__bss_end, __data_end) <= __stack_bottom,
        "Sections exceed available BRAM space");
 
-ASSERT((__stack_top & 0xF) == 0,
+ASSERT(__stack_top == ALIGN(__stack_top, 16),
        "Stack top is not 16-byte aligned (RISC-V ABI requirement)");
