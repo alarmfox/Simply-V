@@ -185,12 +185,13 @@ The `linker.ld`  defines `.bss` and  `.data` sections, but relies on the
 non overlapping memory sections and defines the `__stack_start` and `__stack_size` (4K by default).
 
 ## Usage
-The users are expected to run the application in from the `${ROOT_DIR}/sw/SoC/project/freertos` directory. First, 
-build all applications. Use `DEBUG=1` to enable debug symbols (add `-g` to CFLAGS).
+The users are expected to run the application in from the `${ROOT_DIR}/sw/SoC/project/freertos` directory. 
+Users can either build all applications under `app/` (`make`) or a single application (`make <app-name>`). 
+Use `DEBUG=1` to enable debug symbols (add `-g` to CFLAGS).
 
 > [!Note]
 > Toolchain, architecture, ABI etc. are managed from `${ROOT_DIR}/sw/SoC/common/config.mk`. You can define your 
-custom RV_PREFIX by running something make RV_PREFIX=<path-to-prefix>
+custom RV_PREFIX by running something `make RV_PREFIX=<path-to-prefix> XLEN=<32-64>`
 
 ```sh
 # build all applications in app/
