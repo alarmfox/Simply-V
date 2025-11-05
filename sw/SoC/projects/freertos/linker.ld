@@ -45,7 +45,7 @@ SECTIONS {
    Link-time sanity checks
    -------------------------------------------------------------------------- */
 ASSERT(__stack_bottom >= ORIGIN(BRAM),
-       "Stack overflows below start of BRAM — reduce stack or data size")
+       "Stack overflows below start of BRAM -  reduce stack or data size")
 
 ASSERT(_text_end <= __bram_end,
        ".text section exceeds BRAM size")
@@ -54,7 +54,7 @@ ASSERT(__data_end <= __bram_end,
        ".data section exceeds BRAM size")
 
 ASSERT(__stack_bottom >= ORIGIN(BRAM),
-       "Stack overflows below start of BRAM — reduce stack or data size");
+       "Stack overflows below start of BRAM - reduce stack or data size");
 
 ASSERT(__bss_end <= __bram_end,
        ".bss section exceeds BRAM size");
@@ -63,10 +63,10 @@ ASSERT(__data_end <= __bram_end,
        ".data section exceeds BRAM size");
 
 ASSERT(__stack_bottom >= __data_end,
-       "Stack overlaps .data — reduce stack or data size");
+       "Stack overlaps .data - reduce stack or data size");
 
 ASSERT(__stack_bottom >= __bss_end,
-       "Stack overlaps .bss — reduce stack or bss size");
+       "Stack overlaps .bss - reduce stack or bss size");
 
 ASSERT(MAX(__bss_end, __data_end) <= __stack_bottom,
        "Sections exceed available BRAM space");
