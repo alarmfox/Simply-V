@@ -62,6 +62,9 @@ APP_SRCS_$(1) := $(wildcard $(APP_DIR)/$(1)/*.c) $(wildcard $(APP_DIR)/$(1)/*.S)
 APP_OBJS_$(1) := $(patsubst $(APP_DIR)/$(1)/%.c,$(BUILD_DIR)/$(1)/%.o,$(wildcard $(APP_DIR)/$(1)/*.c)) \
                  $(patsubst $(APP_DIR)/$(1)/%.S,$(BUILD_DIR)/$(1)/%.o,$(wildcard $(APP_DIR)/$(1)/*.S))
 
+# Shortcut to build a single application only: make <app>
+$(1): $(BUILD_DIR)/$(1)/$(1).bin
+
 # Compilation rules for app '$(1)'
 $(BUILD_DIR)/$(1)/%.o: $(APP_DIR)/$(1)/%.c
 	@mkdir -p $(BUILD_DIR)/$(1)
