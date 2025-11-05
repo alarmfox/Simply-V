@@ -1,7 +1,7 @@
 # Simply-V FreeRTOS
 
 > [!WARNING]
-> `freertos` expects the `source $ROOT_DIR/settings.sh` to be executed.
+> `freertos` expects the `source $ROOT_DIR/settings.sh` to be sourced in the current shell.
 
 The FreeRTOS integration in Simply-V works by linking applications against the FreeRTOS kernel. The
 directory structure is:
@@ -147,7 +147,7 @@ __stack_bottom    = __stack_top - __stack_size;
 __freertos_irq_stack_top = __stack_top;
 ```
 
-> [!WARNING]
+> [!Note]
 > Make sure the `configISR_STACK_SIZE_WORDS` is not defined in the `FreeRTOSConfig.h`
 
 ### Timer configuration
@@ -180,41 +180,45 @@ void vPortSetupTimerInterrupt(void) {
 
 ### Linkerscript
 
-The `linker.ld`  and defines `.bss`, `.data`, sections, but relies on the
-`${ROOT_DIR}/sw/SoC/common/UninaSoC.ld` for memory and peripheral symbols. The linkerscript asserts 
-memory non overlapping memory sections, and defines the stack size.
+The `linker.ld`  defines `.bss` and  `.data` sections, but relies on the
+`${ROOT_DIR}/sw/SoC/common/UninaSoC.ld` for memory and peripheral symbols. The linkerscript asserts
+non overlapping memory sections and defines the `__stack_start` and `__stack_size` (4K by default).
 
 ## Usage
 The users are expected to run the application in from the `${ROOT_DIR}/sw/SoC/project/freertos` directory. First, 
-build all applications. The following variables can be used:
-- DEBUG=1: compiles with `-g` for debug symbols;
+build all applications. Use `DEBUG=1` to enable debug symbols (add `-g` to CFLAGS).
+
+> [!Note]
+> Toolchain, architecture, ABI etc. are managed from `${ROOT_DIR}/sw/SoC/common/config.mk`. You can define your 
+custom RV_PREFIX by running something make RV_PREFIX=<path-to-prefix>
 
 ```sh
+# build all applications in app/
 make DEBUG=1
+
+# or build single application in app/
+make DEBUG=1 timed-prod-cons
 ```
 
 Load the application on the target:
 ```sh
-(gdb) file build/basic-two-tasks/basic-two-tasks.elf
-A program is being debugged already.
-Are you sure you want to change the file? (y or n) y
-Reading symbols from build/basic-two-tasks/basic-two-tasks.elf...
-(gdb) load
-Loading section .vector_table, size 0x80 lma 0x0
-Loading section .text, size 0xb560 lma 0x100
-Loading section .data, size 0x24 lma 0xc7fc
-Loading section .sdata, size 0x10 lma 0xc820
-Loading section .rodata, size 0x2b0 lma 0xc830
-Loading section .srodata, size 0x18 lma 0xcae0
-Start address 0x00000100, load size 47324
-Transfer rate: 70 KB/sec, 5915 bytes/write.
+?? () at startup.S:9
+9           jal x0, freertos_risc_v_trap_handler
+Loading section .vector_table, size 0x82 lma 0x0
+Loading section .text, size 0x8d60 lma 0x100
+Loading section .rodata, size 0x214 lma 0x8e60
+Loading section .srodata, size 0x18 lma 0x9078
+Loading section .data, size 0xc lma 0xa660
+Loading section .sdata, size 0x10 lma 0xa66c
+Start address 0x00000100, load size 36906
+Transfer rate: 54 KB/sec, 4613 bytes/write.
 (gdb) b main
-Breakpoint 1 at 0x548: file app/basic-two-tasks/main.c, line 129.
+Breakpoint 1 at 0x548: file app/timed-prod-cons/main.c, line 153.
 (gdb) c
 Continuing.
 
-Breakpoint 1, main () at app/basic-two-tasks/main.c:129
-129         uninasoc_init();
+Breakpoint 1, main () at app/timed-prod-cons/main.c:153
+153         uninasoc_init();
 ```
 
 ## Development
@@ -240,7 +244,7 @@ make clean
 bear -- make DEBUG=1
 ```
 
-And include the `compile_commands.json` in the `.clangd`:
+And include the `compile_commands.json` in the `.clangd` (this should be default):
 
 ```
 CompileFlags: 
