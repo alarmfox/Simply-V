@@ -34,7 +34,7 @@ static void Task(void *pvParameters) {
 }
 
 // https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick
-void vExternalTickIncrement() {
+static void vExternalTickIncrement() {
   BaseType_t xSwitchRequired;
 
   // Clear interrupt flag
