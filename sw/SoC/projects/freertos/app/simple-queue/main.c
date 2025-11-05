@@ -40,7 +40,7 @@ static void prvQueueMyTask2(void *pvParameters) {
   (void)pvParameters;
   while (1) {
     unsigned long ulReceivedValue;
-    
+
     printf("Task2: receiving value...");
 
     xQueueReceive(xQueue, &ulReceivedValue, portMAX_DELAY);
@@ -51,9 +51,7 @@ static void prvQueueMyTask2(void *pvParameters) {
     free_heap = xPortGetFreeHeapSize();
     configASSERT(free_heap > 0);
 
-    if (ulReceivedValue == 100UL) {
-      ulReceivedValue = 0U;
-    }
+    if (ulReceivedValue == 100UL) { ulReceivedValue = 0U; }
     configASSERT(ulReceivedValue == 0U);
     taskYIELD();
   }
@@ -80,22 +78,22 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
   (void)xTask;
   (void)pcTaskName;
 
-  __asm volatile ("ebreak");
+  __asm volatile("ebreak");
 }
 #endif // configCHECK_FOR_STACK_OVERFLOW
-
 
 #ifdef configUSE_MALLOC_FAILED_HOOK
 /* Called if pvPortMalloc() fails (heap exhausted) */
 void vApplicationMallocFailedHook(void) {
-    __asm volatile ("ebreak");
+  __asm volatile("ebreak");
 }
 #endif // configUSE_MALLOC_FAILED_HOOK
 
 int main() {
 
   uninasoc_init();
-  printf("SIMPLY-V FreeRTOS Simple Queue Demo!\n\r");
+  printf("================= Simply-V Producer - Consumer with Yield "
+         "==================\n\r");
 
   xQueue = xQueueCreate(mainQUEUE_LENGTH, sizeof(unsigned long));
   configASSERT(xQueue != NULL);
@@ -119,9 +117,11 @@ int main() {
 
   vTaskStartScheduler();
 
-  configASSERT(0); // insufficient RAM->scheduler task returns->vAssertCalled() called
+  configASSERT(
+      0); // insufficient RAM->scheduler task returns->vAssertCalled() called
 
-  while (1);
+  while (1)
+    ;
 
   return 0;
 }

@@ -4,29 +4,28 @@
 
 #include "uninasoc.h"
 
-/*  =============================== Variables ================================ */
-static xlnx_tim_t timer = {
-  .base_addr = TIM0_BASEADDR,
-  .counter = 200000,
-  .reload_mode = TIM_RELOAD_AUTO,
-  .count_direction = TIM_COUNT_DOWN
-};
+/*  =============================== Variables ================================
+ */
+static xlnx_tim_t timer = {.base_addr = TIM0_BASEADDR,
+                           .counter = 200000,
+                           .reload_mode = TIM_RELOAD_AUTO,
+                           .count_direction = TIM_COUNT_DOWN};
 static QueueHandle_t xQueue = NULL;
 
 #define PRODUCER_TASK_PRIORITY (tskIDLE_PRIORITY + 1)
 #define CONSUMER_TASK_PRIORITY (PRODUCER_TASK_PRIORITY + 1)
 
 #define PRODUCER_PARAMETER (1)
-#define QUEUE_LENGTH       (1)
-/*  =============================== Variables ================================ */
-
+#define QUEUE_LENGTH (1)
+/*  =============================== Variables ================================
+ */
 
 static void Producer(void *pvParameters) {
 
-  configASSERT(((uint32_t) pvParameters) == PRODUCER_PARAMETER);
+  configASSERT(((uint32_t)pvParameters) == PRODUCER_PARAMETER);
 
   TickType_t xLastWakeTime;
-  uint32_t amt = (uint32_t) pvParameters;
+  uint32_t amt = (uint32_t)pvParameters;
   uint32_t counter = 0;
   const TickType_t xFrequency = 100;
 
@@ -40,24 +39,23 @@ static void Producer(void *pvParameters) {
     xQueueSend(xQueue, &counter, 0U);
 
     // Wait for the next cycle.
-    vTaskDelayUntil( &xLastWakeTime, xFrequency );
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
 static void Consumer(void *pvParameters) {
-  (void) pvParameters;
+  (void)pvParameters;
 
   uint32_t counter = 0;
 
   while (1) {
 
-    if (xQueueReceive(xQueue, &counter, portMAX_DELAY) ) {
+    if (xQueueReceive(xQueue, &counter, portMAX_DELAY)) {
       printf("Consumer received: %d\n\r", counter);
 
       // simulate some operation
       vTaskDelay(2);
     }
-
   }
 }
 
@@ -72,22 +70,20 @@ static void vExternalTickIncrement() {
   xSwitchRequired = xTaskIncrementTick();
 
   // If a task was unblocked, yield to it
-  if (xSwitchRequired != pdFALSE) {
-    portYIELD_FROM_ISR(xSwitchRequired);
-  }
+  if (xSwitchRequired != pdFALSE) { portYIELD_FROM_ISR(xSwitchRequired); }
 }
 
 void freertos_risc_v_application_interrupt_handler(uint32_t mcause) {
-  (void) mcause;
+  (void)mcause;
 
   uint32_t interrupt_id = plic_claim();
 
   switch (interrupt_id) {
-    case 0x2:
-      vExternalTickIncrement();
-      break;
-    default:
-      break;
+  case 0x2:
+    vExternalTickIncrement();
+    break;
+  default:
+    break;
   }
   plic_complete(interrupt_id);
 }
@@ -105,15 +101,14 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
   (void)xTask;
   (void)pcTaskName;
 
-  __asm volatile ("ebreak");
+  __asm volatile("ebreak");
 }
 #endif // configCHECK_FOR_STACK_OVERFLOW
-
 
 #ifdef configUSE_MALLOC_FAILED_HOOK
 /* Called if pvPortMalloc() fails (heap exhausted) */
 void vApplicationMallocFailedHook(void) {
-    __asm volatile ("ebreak");
+  __asm volatile("ebreak");
 }
 #endif // configUSE_MALLOC_FAILED_HOOK
 
@@ -122,14 +117,14 @@ void vApplicationMallocFailedHook(void) {
 // unwanted jumps to reset handler
 void vPortSetupTimerInterrupt(void) {
   int ret;
-  uint32_t priorities[3] = { 1, 1, 1 };
-  
+  uint32_t priorities[3] = {1, 1, 1};
+
   plic_init();
   plic_configure(priorities, 3);
   plic_enable_all();
 
   xlnx_tim_init(&timer);
- 
+
   ret = xlnx_tim_configure(&timer);
   if (ret != UNINASOC_OK) {
     printf("Cannot configure timer\r\n");
@@ -150,40 +145,40 @@ void vPortSetupTimerInterrupt(void) {
 
   // Enable local interrupts lines
   // MEI (External Interrupt)
-  __asm volatile ( "csrs mie, %0" ::"r" ( 0x800 ) );
+  __asm volatile("csrs mie, %0" ::"r"(0x800));
 }
 
 int main() {
 
   uninasoc_init();
 
-  printf("================= Simply-V Producer - Consumer with Timer ==================\n\r");
+  printf("================= Simply-V Producer - Consumer with Timer "
+         "==================\n\r");
 
   xQueue = xQueueCreate(QUEUE_LENGTH, sizeof(uint32_t));
   configASSERT(xQueue != NULL);
 
   BaseType_t mem_1 =
       xTaskCreate(Producer, "Producer", configMINIMAL_STACK_SIZE,
-                  (void *)PRODUCER_PARAMETER,
-                  PRODUCER_TASK_PRIORITY, NULL);
+                  (void *)PRODUCER_PARAMETER, PRODUCER_TASK_PRIORITY, NULL);
 
-  BaseType_t mem_2 = xTaskCreate(
-      Consumer, "Consumer", configMINIMAL_STACK_SIZE,
-      (void *)0, CONSUMER_TASK_PRIORITY, NULL);
+  BaseType_t mem_2 = xTaskCreate(Consumer, "Consumer", configMINIMAL_STACK_SIZE,
+                                 (void *)0, CONSUMER_TASK_PRIORITY, NULL);
 
   configASSERT(mem_1 == pdPASS);
 
   configASSERT(mem_2 == pdPASS);
-
 
   size_t free_heap = xPortGetFreeHeapSize();
 
   configASSERT(free_heap > 0);
   vTaskStartScheduler();
 
-  configASSERT(0); // insufficient RAM->scheduler task returns->vAssertCalled() called
+  configASSERT(
+      0); // insufficient RAM->scheduler task returns->vAssertCalled() called
 
-  while (1);
+  while (1)
+    ;
 
   return 0;
 }

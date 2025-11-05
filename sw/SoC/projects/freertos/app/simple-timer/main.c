@@ -2,12 +2,10 @@
 #include "task.h"
 #include "uninasoc.h"
 
-static xlnx_tim_t timer = {
-  .base_addr = TIM0_BASEADDR,
-  .counter = 200000,
-  .reload_mode = TIM_RELOAD_AUTO,
-  .count_direction = TIM_COUNT_DOWN
-};
+static xlnx_tim_t timer = {.base_addr = TIM0_BASEADDR,
+                           .counter = 200000,
+                           .reload_mode = TIM_RELOAD_AUTO,
+                           .count_direction = TIM_COUNT_DOWN};
 
 #define TASK_PRIORITY (tskIDLE_PRIORITY + 1)
 
@@ -18,7 +16,7 @@ static void Task(void *pvParameters) {
   configASSERT(((uint32_t)pvParameters) == TASK_PARAMETER);
 
   TickType_t xLastWakeTime;
-  uint32_t amt = (uint32_t) pvParameters;
+  uint32_t amt = (uint32_t)pvParameters;
   uint32_t counter = 0;
   const TickType_t xFrequency = 10;
 
@@ -29,7 +27,7 @@ static void Task(void *pvParameters) {
     counter += amt;
     printf("Task counter: %d\n\r", counter);
     // Wait for the next cycle.
-    vTaskDelayUntil( &xLastWakeTime, xFrequency );
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
@@ -44,22 +42,20 @@ static void vExternalTickIncrement() {
   xSwitchRequired = xTaskIncrementTick();
 
   // If a task was unblocked, yield to it
-  if (xSwitchRequired != pdFALSE) {
-    portYIELD_FROM_ISR(xSwitchRequired);
-  }
+  if (xSwitchRequired != pdFALSE) { portYIELD_FROM_ISR(xSwitchRequired); }
 }
 
 void freertos_risc_v_application_interrupt_handler(uint32_t mcause) {
-  (void) mcause;
+  (void)mcause;
 
   uint32_t interrupt_id = plic_claim();
 
   switch (interrupt_id) {
-    case 0x2:
-      vExternalTickIncrement();
-      break;
-    default:
-      break;
+  case 0x2:
+    vExternalTickIncrement();
+    break;
+  default:
+    break;
   }
   plic_complete(interrupt_id);
 }
@@ -77,15 +73,14 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
   (void)xTask;
   (void)pcTaskName;
 
-  __asm volatile ("ebreak");
+  __asm volatile("ebreak");
 }
 #endif // configCHECK_FOR_STACK_OVERFLOW
-
 
 #ifdef configUSE_MALLOC_FAILED_HOOK
 /* Called if pvPortMalloc() fails (heap exhausted) */
 void vApplicationMallocFailedHook(void) {
-    __asm volatile ("ebreak");
+  __asm volatile("ebreak");
 }
 #endif // configUSE_MALLOC_FAILED_HOOK
 
@@ -94,14 +89,14 @@ void vApplicationMallocFailedHook(void) {
 // unwanted jumps to reset handler
 void vPortSetupTimerInterrupt(void) {
   int ret;
-  uint32_t priorities[3] = { 1, 1, 1 };
-  
+  uint32_t priorities[3] = {1, 1, 1};
+
   plic_init();
   plic_configure(priorities, 3);
   plic_enable_all();
 
   xlnx_tim_init(&timer);
- 
+
   ret = xlnx_tim_configure(&timer);
   if (ret != UNINASOC_OK) {
     printf("Cannot configure timer\r\n");
@@ -122,27 +117,31 @@ void vPortSetupTimerInterrupt(void) {
 
   // Enable local interrupts lines
   // MEI (External Interrupt)
-  __asm volatile ( "csrs mie, %0" ::"r" ( 0x800 ) );
+  __asm volatile("csrs mie, %0" ::"r"(0x800));
 }
 
 int main() {
 
   uninasoc_init();
+  printf("================= Simply-V Timer Example "
+         "==================\n\r");
 
   // Create FreeRTOS Task
   BaseType_t res = xTaskCreate(Task, "task", configMINIMAL_STACK_SIZE,
-                                 (void *)TASK_PARAMETER, TASK_PRIORITY, NULL);
+                               (void *)TASK_PARAMETER, TASK_PRIORITY, NULL);
 
-  configASSERT(res== pdPASS);
+  configASSERT(res == pdPASS);
 
   size_t free_heap = xPortGetFreeHeapSize();
 
   configASSERT(free_heap > 0);
   vTaskStartScheduler();
 
-  configASSERT(0); // insufficient RAM->scheduler task returns->vAssertCalled() called
+  // insufficient RAM->scheduler task returns->vAssertCalled() called
+  configASSERT(0);
 
-  while (1);
+  while (1)
+    ;
 
   return 0;
 }
