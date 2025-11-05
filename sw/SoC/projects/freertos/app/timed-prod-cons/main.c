@@ -35,11 +35,9 @@ static void Producer(void *pvParameters) {
 
   while (1) {
     counter += amt;
-    printf("Producer sending: %d...", counter);
+    printf("Producer sending: %d \n\r", counter);
 
     xQueueSend(xQueue, &counter, 0U);
-
-    printf("done\n\r");
 
     // Wait for the next cycle.
     vTaskDelayUntil( &xLastWakeTime, xFrequency );
@@ -49,25 +47,17 @@ static void Producer(void *pvParameters) {
 static void Consumer(void *pvParameters) {
   (void) pvParameters;
 
-  TickType_t xLastWakeTime;
   uint32_t counter = 0;
-  const TickType_t xFrequency = 150;
-
-  // Initialise the xLastWakeTime variable with the current time.
-  xLastWakeTime = xTaskGetTickCount();
 
   while (1) {
-    printf("Consumer waiting...");
 
-    xQueueReceive(xQueue, &counter, 0U);
+    if (xQueueReceive(xQueue, &counter, portMAX_DELAY) ) {
+      printf("Consumer received: %d\n\r", counter);
 
-    printf("received: %d\n\r", counter);
+      // simulate some operation
+      vTaskDelay(2);
+    }
 
-    // simulate some operation
-    vTaskDelay(2);
-
-    // Wait for the next cycle.
-    vTaskDelayUntil( &xLastWakeTime, xFrequency );
   }
 }
 
