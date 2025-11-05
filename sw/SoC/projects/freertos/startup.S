@@ -1,9 +1,9 @@
-    /* ultra-minimal startup.S for RISC-V */
+    /* minimal startup.S for FreeRTOS-RISC-V */
     .extern freertos_risc_v_trap_handler
     .section .vector_table, "ax"
     .align 4
     .option norvc
-    /* In vectored mode all entries must go to -> freertos_risc_v_trap_handler */
+    /* In vectored mode all entries must point to -> freertos_risc_v_trap_handler */
     /* https://www.freertos.org/Using-FreeRTOS-on-RISC-V#interrupt-system-stack-setup */
     .rept 32
     jal x0, freertos_risc_v_trap_handler
@@ -55,10 +55,6 @@ _reset_handler:
 
     /* Jump to C entry (_start). Keep interrupts disabled here; enable later when ready. */
     j     _start
-
-_default_handler:
-    /* simple infinite loop for unexpected traps */
-    j     _default_handler
 
     .global _start
 _start:
