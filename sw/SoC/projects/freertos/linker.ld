@@ -15,34 +15,61 @@ trap_vector_start is the base address for the interrupt handlers
 
 */
 
-_trap_vectors_start = _vector_table_start + 0x0000000000000004;
+__bram_end        = ORIGIN(BRAM) + LENGTH(BRAM);
+__stack_size      = 0x1000;
+__stack_top       = __bram_end - 0x10;
+__stack_bottom    = __stack_top  - __stack_size;
+
+/* https://www.freertos.org/Using-FreeRTOS-on-RISC-V#interrupt-system-stack-setup */
+__freertos_irq_stack_top = __stack_top;
 
 SECTIONS {
 
-	  .bss :  /*  _text_end has been already aligned to 32 bits in UninaSoC.ld */
-	  {
-	     _bss_start = .;
-	     *(.bss*);
-	     . = ALIGN(32);
-	     _bss_end = .;
-	  }> BRAM
+   .bss : ALIGN(0x20)
+   {
+    __bss_start = .;
+    *(.bss*);
+    __bss_end = .;
+   }> BRAM
 
-	  .data : 
-	  {
-	     . = ALIGN(32);
-	     _data_start = .;
-	     *(.data*);
-	     . = ALIGN(32);
-	     _data_end = .;
-	  }> BRAM
-
-	  .rodata : 
-	  {
-	     . = ALIGN(32);
-	     _rodata_start = .;
-	     *(.rodata*);
-	     . = ALIGN(32);
-	     _rodata_end = .;
-	  } > BRAM
+   .data : ALIGN(0x20)
+   {
+    __data_start = .;
+    *(.data*);
+    __data_end = .;
+   }> BRAM
 
 }
+
+/* --------------------------------------------------------------------------
+   Link-time sanity checks
+   -------------------------------------------------------------------------- */
+ASSERT(__stack_bottom >= ORIGIN(BRAM),
+       "Stack overflows below start of BRAM — reduce stack or data size")
+
+ASSERT(_text_end <= __bram_end,
+       ".text section exceeds BRAM size")
+
+ASSERT(__data_end <= __bram_end,
+       ".data section exceeds BRAM size")
+
+ASSERT(__stack_bottom >= ORIGIN(BRAM),
+       "Stack overflows below start of BRAM — reduce stack or data size");
+
+ASSERT(__bss_end <= __bram_end,
+       ".bss section exceeds BRAM size");
+
+ASSERT(__data_end <= __bram_end,
+       ".data section exceeds BRAM size");
+
+ASSERT(__stack_bottom >= __data_end,
+       "Stack overlaps .data — reduce stack or data size");
+
+ASSERT(__stack_bottom >= __bss_end,
+       "Stack overlaps .bss — reduce stack or bss size");
+
+ASSERT(MAX(__bss_end, __data_end) <= __stack_bottom,
+       "Sections exceed available BRAM space");
+
+ASSERT((__stack_top & 0xF) == 0,
+       "Stack top is not 16-byte aligned (RISC-V ABI requirement)");
