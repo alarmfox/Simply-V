@@ -21,7 +21,7 @@ KERNEL_OBJS := $(BUILD_DIR)/startup.o \
 ###############################################################################################
 # CFLAGS
 ###############################################################################################
-CFLAGS  += -Wall -Wextra -ffreestanding -nostdlib
+CFLAGS   += -Wall -Wextra -ffreestanding
 
 INCLUDES := -I. \
             -I$(KERNEL_DIR)/include \
@@ -38,7 +38,7 @@ CFLAGS  += $(INCLUDES)
 ###############################################################################################
 # Linker flags
 ###############################################################################################
-LDFLAGS  = -nostdlib -Tlinker.ld -lc -lgcc
+LDFLAGS  = -nostdlib -nostartfiles -lc -lgcc -Tlinker.ld
 LDFLAGS += $(SW_SOC_ROOT)/lib/uninasoc/lib/libuninasoc.a $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
 
 ###############################################################################################
