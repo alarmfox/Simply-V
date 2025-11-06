@@ -45,7 +45,7 @@ _reset_handler:
     mv t6, zero
 
     /* Initialize stack pointer first */
-    la    sp, __stack_top
+    la    sp, _stack_start
 
     /* Set mtvec trap freertos_risc_v_trap_handler VECTORED mode. */
     la a0, _vector_table_start  # Load vector table base address
