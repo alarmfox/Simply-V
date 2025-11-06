@@ -10,22 +10,24 @@
 ####################
 # Manipulate CSV
 import pandas as pd
+
 # Sub-modules
 import configuration
 import parse_properties_wrapper
 
 # Name of buses
 CONFIG_NAMES = {
-    "config_main_bus.csv"            : "MBUS",
-    "config_peripheral_bus.csv"      : "PBUS",
-    "config_highperformance_bus.csv" : "HBUS",
-    "config_system.csv"              : "SYS"
+    "config_main_bus.csv": "MBUS",
+    "config_peripheral_bus.csv": "PBUS",
+    "config_highperformance_bus.csv": "HBUS",
+    "config_system.csv": "SYS",
 }
+
 
 ###############
 # Read config #
 ###############
-def read_config(config_file_names : list) -> list:
+def read_config(config_file_names: list) -> list:
     # List of configuration objects (one for each bus)
     configs = []
     for name in config_file_names:
@@ -40,13 +42,14 @@ def read_config(config_file_names : list) -> list:
         # Reading the CSV
         for index, row in pd.read_csv(name, sep=",").iterrows():
             # Update the config
-	        config = parse_properties_wrapper.parse_property(config, row["Property"], row["Value"])
+            config = parse_properties_wrapper.parse_property(
+                config, row["Property"], row["Value"]
+            )
 
         # Append the config to the list
         configs.append(config)
 
     return configs
-
 
 
 ############
@@ -58,14 +61,17 @@ PRINT_PREFIX = "[CHECK_CONFIG]"
 PRINT_ERROR_PREFIX = "[ERROR]"
 PRINT_WARNING_PREFIX = "[WARNING]"
 
+
 # print info
-def print_info(txt : str) -> None:
+def print_info(txt: str) -> None:
     print(f"{PRINT_PREFIX} {txt}")
 
+
 # print warning
-def print_warning(txt : str) -> None:
+def print_warning(txt: str) -> None:
     print(f"{PRINT_PREFIX}{PRINT_WARNING_PREFIX} {txt}")
 
+
 # print error
-def print_error(txt : str) -> None:
+def print_error(txt: str) -> None:
     print(f"{PRINT_PREFIX}{PRINT_ERROR_PREFIX} {txt}")

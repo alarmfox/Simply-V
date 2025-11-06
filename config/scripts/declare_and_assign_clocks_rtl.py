@@ -10,8 +10,10 @@
 ####################
 # Parse args
 import sys
+
 # Get env vars
 import os
+
 # Sub-scripts
 import configuration
 from utils import *
@@ -19,19 +21,19 @@ from utils import *
 # Constants
 
 # File comments
-FILE_HEADER = \
-f"// This file is auto-generated with {os.path.basename(__file__)}\n\n\
+FILE_HEADER = f"// This file is auto-generated with {os.path.basename(__file__)}\n\n\
 /////////////////////////////////////////\n\
 // Clocks declaration and assignments  //\n\
 /////////////////////////////////////////\n"
 
 # RTL files to edit
-RTL_FILES                = {
-    "UNINASOC"   : f"{os.environ.get('XILINX_ROOT')}/rtl/uninasoc_clk_assignments.svinc",
+RTL_FILES = {
+    "UNINASOC": f"{os.environ.get('XILINX_ROOT')}/rtl/uninasoc_clk_assignments.svinc",
 }
 
+
 # Clocks declarations and assignments
-def declare_and_assign_clocks(config : configuration.Configuration) -> None:
+def declare_and_assign_clocks(config: configuration.Configuration) -> None:
     # Declare and assign clocks in uninasoc
     file = open(RTL_FILES["UNINASOC"], "w")
     file.write(FILE_HEADER)
@@ -47,13 +49,18 @@ def declare_and_assign_clocks(config : configuration.Configuration) -> None:
                 file.write(f"logic HBUS_clk;\n")
             else:
                 file.write(f"logic {config.RANGE_NAMES[i]}_clk;\n")
-                file.write(f"assign {config.RANGE_NAMES[i]}_clk = clk_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
+                file.write(
+                    f"assign {config.RANGE_NAMES[i]}_clk = clk_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n"
+                )
                 file.write(f"logic {config.RANGE_NAMES[i]}_rstn;\n")
-                file.write(f"assign {config.RANGE_NAMES[i]}_rstn = rstn_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
+                file.write(
+                    f"assign {config.RANGE_NAMES[i]}_rstn = rstn_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n"
+                )
 
     file.close()
 
     print_info("Output file is at " + RTL_FILES["UNINASOC"])
+
 
 ########
 # MAIN #

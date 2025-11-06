@@ -30,7 +30,7 @@ devices = set()
 with open(peripheral_csv_path, "r") as file:
     reader = csv.reader(file)
     # For each line
-    for (property, value) in reader:
+    for property, value in reader:
         if property == "RANGE_NAMES":
             names = value.split(" ")
             for name in names:
