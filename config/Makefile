@@ -1,5 +1,6 @@
 # Variables
-PYTHON ?= python3.10 # Requires >= 3.10
+# uv will automatically download the correct python version
+PYTHON ?= uv run --python 3.10
 
 # Configurations
 CONFIG_MBUS_CSV ?= ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_main_bus.csv
@@ -51,5 +52,3 @@ config_xilinx:
 config_sw: config_check
 	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_uninasoc_conf_header.py ${CONFIG_PBUS_CSV} ${OUTPUT_HAL_CONF_FILE}
-
-

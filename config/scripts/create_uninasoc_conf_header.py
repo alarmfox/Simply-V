@@ -1,4 +1,7 @@
-#!/bin/python3.10
+# /// script
+# dependencies = ["pandas"]
+# ///
+
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Description: Parse PBUS config and generate HAL header

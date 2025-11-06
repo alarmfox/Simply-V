@@ -1,4 +1,7 @@
-#!/bin/python3.10
+# /// script
+# dependencies = ["pandas"]
+# ///
+
 # Author: Stefano Toscano 		<stefa.toscano@studenti.unina.it>
 # Author: Vincenzo Maisto 		<vincenzo.maisto2@unina.it>
 # Author: Stefano Mercogliano 		<stefano.mercogliano@unina.it>
