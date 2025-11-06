@@ -32,24 +32,14 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)` functi
 called when the malloc fails or when the stack overflows happens.
 
 #### Heap configuration
-FreeRTOS has different heap implemenations, you can choose the heap implementation by changing the 
-include file in the `Makefile` (default is `heap_1.c`):
+FreeRTOS has different heap implemenations, you can choose the heap implementation by specifying
+the `HEAP_PROFILE` variable on the `make` command (from 1 to 5, default is 1). 
+include file in the `Makefile` (default is `1`). For example to use `heap_3.c`:
 
-```Makefile
-KERNEL_SRCS  := $(wildcard $(KERNEL_DIR)/*.c) \
-                 $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.c) \
-                 $(wildcard $(KERNEL_DIR)/portable/MemMang/heap_1.c) \
-                 $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.S)
+```sh
+make HEAP_PROFILE=3
 ```
 
-To change to `heap_4.c`, just provide the `heap_4.c` file:
-
-```Makefile
-KERNEL_SRCS  := $(wildcard $(KERNEL_DIR)/*.c) \
-                 $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.c) \
-                 $(wildcard $(KERNEL_DIR)/portable/MemMang/heap_4.c) \
-                 $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.S)
-```
 
 ### System Tick Managemnet
 For now the SoC does not support a system timer. The SystemTick needs to be updated using a custom interrupt 

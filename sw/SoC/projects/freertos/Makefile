@@ -3,16 +3,17 @@ include ../../common/config.mk
 ###############################################################################################
 # Project structure
 ###############################################################################################
-APP_DIR     := app
-KERNEL_DIR  := FreeRTOS-Kernel
-BUILD_DIR   := build
+APP_DIR      := app
+KERNEL_DIR   := FreeRTOS-Kernel
+BUILD_DIR    := build
+HEAP_PROFILE ?= 1
 
 ###############################################################################################
 # Kernel sources (shared)
 ###############################################################################################
 KERNEL_SRCS  := $(wildcard $(KERNEL_DIR)/*.c) \
                  $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.c) \
-                 $(wildcard $(KERNEL_DIR)/portable/MemMang/heap_1.c) \
+                 $(wildcard $(KERNEL_DIR)/portable/MemMang/heap_$(HEAP_PROFILE).c) \
                  $(wildcard $(KERNEL_DIR)/portable/GCC/RISC-V/*.S)
 
 KERNEL_OBJS := $(BUILD_DIR)/startup.o \
