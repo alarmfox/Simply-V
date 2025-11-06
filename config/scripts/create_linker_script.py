@@ -127,7 +127,15 @@ for i in range(len(RANGE_NAMES)):
 		if counter == len(RANGE_NAMES[i]):
 			counter = 0
 
+# Note: The memory size specified in the config.csv file may differ from the
+# physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
+# Currently, the configuration process does not ensure alignment between config.csv
+# and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
+# 32KB for now, based on the current setting in `config.tcl`.
 device_dict['global_symbols'] = [
+		# The stack is allocated at the end of first memory block
+		# _stack_end can be user-defined for the application, as bss and rodata
+		# _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
 		("_stack_start", device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x10),
 		("_vector_table_start", device_dict['memory'][BOOT_MEMORY_BLOCK]['base']),
 		("_vector_table_end", device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + 32 * 4)
