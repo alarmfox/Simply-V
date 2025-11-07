@@ -19,6 +19,8 @@ import sys
 import os
 # Manipulate CSV
 import pandas as pd
+# String templating
+from jinja2 import Template
 
 ##############
 # Parse args #
@@ -99,8 +101,8 @@ for i in range(len(NUM_MI)):
 # Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
 
 device_dict = {
-	'memory':		[],
-	'peripheral':	[]
+	'memory':			[],
+	'peripheral':		[],
 }
 
 counter = 0
@@ -110,8 +112,9 @@ for i in range(len(RANGE_NAMES)):
 		match device:
 			# memory blocks
 			# TODO77: extend for multiple BRAMs
+  	  # TODO: tailor each memory block with specific permissions. Eg. BRAM (rx)
 			case d if d in {"BRAM", "HBM"} or d.startswith("DDR4CH"):
-				device_dict['memory'].append({'device': device, 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
+				device_dict['memory'].append({'device': device, 'permissions': 'xrw', 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
 
 			# peripherals
 			case _:
@@ -125,90 +128,77 @@ for i in range(len(RANGE_NAMES)):
 		if counter == len(RANGE_NAMES[i]):
 			counter = 0
 
-
-###############################
-# Generate Linker Script File #
-###############################
-
-# Create the Linker Script File
-fd = open(ld_file_name,  "w")
-
-# Write header
-fd.write("/* This file is auto-generated with " + os.path.basename(__file__) + " */\n")
-
-# Generate the memory blocks layout
-fd.write("\n")
-fd.write("/* Memory blocks */\n")
-fd.write("MEMORY\n")
-fd.write("{\n")
-
-for block in device_dict['memory']:
-	fd.write("\t" + block['device'] + " (xrw) : ORIGIN = 0x" + format(block['base'], "016x") + ",  LENGTH = " + hex(block['range']) + "\n")
-fd.write("}\n")
-
-# Generate symbols from peripherals
-fd.write("\n")
-fd.write("/* Peripherals symbols */\n")
-for peripheral in device_dict['peripheral']:
-	fd.write("_peripheral_" + peripheral['device'] + "_start = 0x" + format(peripheral['base'], "016x") + ";\n")
-	fd.write("_peripheral_" + peripheral['device'] + "_end = 0x" + format(peripheral['base'] + peripheral['range'], "016x") + ";\n")
-
-# Generate global symbols
-fd.write("\n")
-fd.write("/* Global symbols */\n")
-# Vector table is placed at the beggining of the boot memory block.
-# It is aligned to 256 bytes and is 32 words deep. (as described in risc-v spec)
-#vector_table_start  =  memory_block_list[BOOT_MEMORY_BLOCK][DEVICE_ORIGIN]
-vector_table_start  =  device_dict['memory'][BOOT_MEMORY_BLOCK]['base']
-fd.write("_vector_table_start = 0x" + format(vector_table_start, "016x") + ";\n")
-fd.write("_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + ";\n")
-
-# The stack is allocated at the end of first memory block
-# _stack_end can be user-defined for the application, as bss and rodata
-# _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
-
 # Note: The memory size specified in the config.csv file may differ from the
 # physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
 # Currently, the configuration process does not ensure alignment between config.csv
 # and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
 # 32KB for now, based on the current setting in `config.tcl`.
+device_dict['global_symbols'] = [
+		# The stack is allocated at the end of first memory block
+		# _stack_end can be user-defined for the application, as bss and rodata
+		# _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
+		("_stack_start", device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x10),
+		("_vector_table_start", device_dict['memory'][BOOT_MEMORY_BLOCK]['base']),
+		("_vector_table_end", device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + 32 * 4)
+		]
 
-stack_start = device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x8
-fd.write("_stack_start = 0x" + format(stack_start, "016x") + ";\n")
+###############################
+# Generate Linker Script File #
+###############################
 
-# Generate sections
-# vector table and text sections are here defined.
-# data, bss and rodata can be explicitly defined by the user application if required.
-fd.write("\n")
-fd.write("/* Sections */\n")
-fd.write("SECTIONS\n")
-fd.write("{\n")
+template_str = r""" /* This file is auto-dgenerated with {{ current_file_path }} */
+MEMORY
+{
+{% set indent = ' ' * 4 %}
+{% for block in memory -%}
+{{ indent }}{{ block.device }} ({{ block.permissions }}): ORIGIN = {{ block.base }}, LENGTH = 0x{{ "%x"|format(block.range) }}
+{% endfor %}
+}
 
-# Vector Table section
-fd.write("\t.vector_table _vector_table_start :\n")
-fd.write("\t{\n")
-fd.write("\t\tKEEP(*(.vector_table))\n")
-fd.write("\t}> " + device_dict['memory'][BOOT_MEMORY_BLOCK]['device'] + "\n")
+/* Peripherals symbols */
+{% for peripheral in peripherals -%}
+_peripheral_{{ peripheral.device }}_start = 0x{{ "%016x"|format(peripheral.base) }};
+_peripheral_{{ peripheral.device }}_end   = 0x{{ "%016x"|format(peripheral.base + peripheral.range) }};
+{% endfor %}
 
-# Text section
-fd.write("\n")
-fd.write("\t.text :\n")
-fd.write("\t{\n")
-fd.write("\t\t. = ALIGN(32);\n")
-fd.write("\t\t_text_start = .;\n")
-fd.write("\t\t*(.text.handlers)\n")
-fd.write("\t\t*(.text.start)\n")
-fd.write("\t\t*(.text)\n")
-fd.write("\t\t*(.text*)\n")
-fd.write("\t\t. = ALIGN(32);\n")
-fd.write("\t\t_text_end = .;\n")
-fd.write("\t}> " + device_dict['memory'][BOOT_MEMORY_BLOCK]['device'] + "\n")
+/* Global symbols */
+{% for name, value in global_symbols -%}
+{{ name }} = 0x{{ "%016x"|format(value) }};
+{% endfor %}
 
-fd.write("}\n")
+/* Sections */
+SECTIONS
+{
+    .vector_table _vector_table_start :
+    {
+        KEEP(*(.vector_table))
+    }> {{ initial_memory_name }}
 
-# Files closing
-fd.write("\n")
-fd.close()
+    .text :
+    {
+       . = ALIGN(32);
+       _text_start = .;
+       *(.text.handlers)
+       *(.text.start)
+       *(.text)
+       *(.text*)
+       . = ALIGN(32);
+       _text_end = .;
+    }> {{ initial_memory_name }}
+}
+"""
+if __name__ == "__main__":
 
+	template = Template(template_str)
 
+	rendered = template.render(
+		current_file_path=os.path.basename(__file__),
+		peripherals=device_dict['peripheral'],
+		memory=device_dict['memory'],
+		global_symbols=device_dict['global_symbols'],
+		initial_memory_name=device_dict['memory'][BOOT_MEMORY_BLOCK]['device'],
+	)
 
+	# === Output to file ===
+	with open(ld_file_name, "w") as f:
+		f.write(rendered)
