@@ -1,4 +1,3 @@
-#!/bin/python3.10
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Description: utility functions to write RTL file for CLOCKS declaration and assignments
 
@@ -7,57 +6,82 @@
 ####################
 # Parse args
 import sys
+
 # Get env vars
 import os
+
+# String templating
+from jinja2 import Template
+
 # Sub-scripts
 import configuration
-from utils import *
+import utils as ut
 
-# Constants
-
-# File comments
-FILE_HEADER = \
-f"// This file is auto-generated with {os.path.basename(__file__)}\n\n\
-/////////////////////////////////////////\n\
-// Clocks declaration and assignments  //\n\
-/////////////////////////////////////////\n"
 
 # RTL files to edit
-RTL_FILES                = {
-    "UNINASOC"   : f"{os.environ.get('XILINX_ROOT')}/rtl/uninasoc_clk_assignments.svinc",
+RTL_FILES = {
+    "UNINASOC": f"{os.environ.get('XILINX_ROOT')}/rtl/uninasoc_clk_assignments.svinc",
 }
 
-# Clocks declarations and assignments
-def declare_and_assign_clocks(config : configuration.Configuration) -> None:
-    # Declare and assign clocks in uninasoc
-    file = open(RTL_FILES["UNINASOC"], "w")
-    file.write(FILE_HEADER)
-    file.write(f"assign main_clk = clk_{config.MAIN_CLOCK_DOMAIN}MHz;\n")
-    file.write(f"assign main_rstn = rstn_{config.MAIN_CLOCK_DOMAIN}MHz;\n")
-    file.write(f"logic clk_300MHz;\n")
-    file.write(f"logic rstn_300MHz;\n")
-    for i in range(len(config.RANGE_CLOCK_DOMAINS)):
-        # Exclude the DDR from this since it has its own clock
-        if not config.RANGE_NAMES[i].startswith("DDR4CH"):
-            # Special case for HBUS, it comes with its own clock, to feed accelerators on the MBUS
-            if config.RANGE_NAMES[i] in {"HBUS"}:
-                file.write(f"logic HBUS_clk;\n")
-            else:
-                file.write(f"logic {config.RANGE_NAMES[i]}_clk;\n")
-                file.write(f"assign {config.RANGE_NAMES[i]}_clk = clk_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
-                file.write(f"logic {config.RANGE_NAMES[i]}_rstn;\n")
-                file.write(f"assign {config.RANGE_NAMES[i]}_rstn = rstn_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
+template_str = r"""// This file is auto-generated with {{ current_file_path }}
 
-    file.close()
+/////////////////////////////////////////
+// Clocks declaration and assignments  //
+/////////////////////////////////////////
+assign main_clk = clk_{{ main_clock_domain }}MHz;
+assign main_rstn = rstn_{{ main_clock_domain }}MHz;
+logic clk_300MHz;
+logic rstn_300MHz;
 
-    print_info("Output file is at " + RTL_FILES["UNINASOC"])
+{% for clock_domain in clock_domains -%}
+logic {{ clock_domain.name }}_clk;
+assign {{ clock_domain.name }}_clk = clk_{{ clock_domain.clock }}MHz;
+logic {{ clock_domain.name }}_rstn;
+assign {{ clock_domain.name }}_rstn = rstn_{{ clock_domain.clock }}MHz;
+{% endfor %}
+logic HBUS_clk;
+"""
+
 
 ########
 # MAIN #
 ########
 if __name__ == "__main__":
     config_file_names = sys.argv[1:]
-    configs = read_config(config_file_names)
+    configs = ut.read_config(config_file_names)
+    mbus_config: configuration.Configuration = None
+
+    # Get the MBUS configuration
     for config in configs:
         if config.CONFIG_NAME == "MBUS":
-            declare_and_assign_clocks(config)
+            mbus_config = config
+            break
+
+    if mbus_config is None:
+        sys.exit(0)
+
+    # Get (name: clock) data structure
+    clock_domains = []
+    # Navigate the 2 lists. Skip HBUS or DDR4CH* because they have their clock
+    for clock, name in zip(mbus_config.RANGE_CLOCK_DOMAINS, mbus_config.RANGE_NAMES):
+        if name == "HBUS" or name.startswith("DDR4CH"):
+            continue
+        clock_domains.append(
+            {
+                "name": name,
+                "clock": clock,
+            }
+        )
+
+    template = Template(template_str)
+
+    rendered = template.render(
+        current_file_path=os.path.basename(__file__),
+        clock_domains=clock_domains,
+        main_clock_domain=config.MAIN_CLOCK_DOMAIN,
+    )
+
+    with open(RTL_FILES["UNINASOC"], "w") as f:
+        f.write(rendered)
+
+    ut.print_info("Output file is at " + RTL_FILES["UNINASOC"])
