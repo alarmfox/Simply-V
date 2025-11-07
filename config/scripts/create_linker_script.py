@@ -1,7 +1,7 @@
-# Author: Stefano Toscano 		<stefa.toscano@studenti.unina.it>
-# Author: Vincenzo Maisto 		<vincenzo.maisto2@unina.it>
-# Author: Stefano Mercogliano		<stefano.mercogliano@unina.it>
-# Author: Giueseppe Capasso		<giuseppe.capasso17@studenti.unina.it>
+# Author: Stefano Toscano       <stefa.toscano@studenti.unina.it>
+# Author: Vincenzo Maisto       <vincenzo.maisto2@unina.it>
+# Author: Stefano Mercogliano   <stefano.mercogliano@unina.it>
+# Author: Giueseppe Capasso	<giuseppe.capasso17@studenti.unina.it>
 # Description:
 #   Generate a linker script file from the CSV configuration.
 # Note:
@@ -178,7 +178,7 @@ device_dict["global_symbols"] = [
 # Generate Linker Script File #
 ###############################
 
-template_str = r""" /* This file is auto-dgenerated with {{ current_file_path }} */
+template_str = r""" /* This file is auto-generated with {{ current_file_path }} */
 MEMORY
 {
 {% set indent = ' ' * 4 %}
