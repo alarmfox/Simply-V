@@ -43,27 +43,11 @@ logic HBUS_clk;
 """
 
 
-########
-# MAIN #
-########
-if __name__ == "__main__":
-    config_file_names = sys.argv[1:]
-    configs = ut.read_config(config_file_names)
-    mbus_config: configuration.Configuration = None
-
-    # Get the MBUS configuration
-    for config in configs:
-        if config.CONFIG_NAME == "MBUS":
-            mbus_config = config
-            break
-
-    if mbus_config is None:
-        sys.exit(0)
-
+def declare_and_assign_clocks_rtl(c: configuration.Configuration, fname: str) -> None:
     # Get (name: clock) data structure
     clock_domains = []
     # Navigate the 2 lists. Skip HBUS or DDR4CH* because they have their clock
-    for clock, name in zip(mbus_config.RANGE_CLOCK_DOMAINS, mbus_config.RANGE_NAMES):
+    for clock, name in zip(c.RANGE_CLOCK_DOMAINS, c.RANGE_NAMES):
         if name == "HBUS" or name.startswith("DDR4CH"):
             continue
         clock_domains.append(
@@ -83,5 +67,23 @@ if __name__ == "__main__":
 
     with open(RTL_FILES["UNINASOC"], "w") as f:
         f.write(rendered)
+
+
+########
+# MAIN #
+########
+if __name__ == "__main__":
+    config_file_names = sys.argv[1:]
+    configs = ut.read_config(config_file_names)
+    mbus_config: configuration.Configuration = None
+
+    # Get the MBUS configuration
+    for config in configs:
+        if config.CONFIG_NAME == "MBUS":
+            mbus_config = config
+            break
+
+    if mbus_config is None:
+        sys.exit(0)
 
     ut.print_info("Output file is at " + RTL_FILES["UNINASOC"])
