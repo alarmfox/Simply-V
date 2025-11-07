@@ -34,6 +34,8 @@ Further support is coming soon for:
 
 ## Build and Run:
 The top-level `Makefile` can be used to build the platform for the specific target board.
+Build configuration is managed through Python. To ensure consistency and reproducible builds, Python 
+is managed through (`uv`)[https://docs.astral.sh/uv/] (make sure it is in your `$PATH`).
 
 First, setup environment with:
 ``` bash

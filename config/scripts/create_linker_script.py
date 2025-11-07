@@ -1,4 +1,7 @@
-#!/bin/python3.10
+# /// script
+# dependencies = ["pandas"]
+# ///
+
 # Author: Stefano Toscano 		<stefa.toscano@studenti.unina.it>
 # Author: Vincenzo Maisto 		<vincenzo.maisto2@unina.it>
 # Author: Stefano Mercogliano 		<stefano.mercogliano@unina.it>
@@ -187,18 +190,17 @@ SECTIONS
     }> {{ initial_memory_name }}
 }
 """
-if __name__ == "__main__":
 
-	template = Template(template_str)
+template = Template(template_str)
 
-	rendered = template.render(
-		current_file_path=os.path.basename(__file__),
-		peripherals=device_dict['peripheral'],
-		memory=device_dict['memory'],
-		global_symbols=device_dict['global_symbols'],
-		initial_memory_name=device_dict['memory'][BOOT_MEMORY_BLOCK]['device'],
-	)
+rendered = template.render(
+	current_file_path=os.path.basename(__file__),
+	peripherals=device_dict['peripheral'],
+	memory=device_dict['memory'],
+	global_symbols=device_dict['global_symbols'],
+	initial_memory_name=device_dict['memory'][BOOT_MEMORY_BLOCK]['device'],
+)
 
-	# === Output to file ===
-	with open(ld_file_name, "w") as f:
-		f.write(rendered)
+# === Output to file ===
+with open(ld_file_name, "w") as f:
+	f.write(rendered)

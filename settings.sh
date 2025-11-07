@@ -12,6 +12,11 @@ if ! command -v vivado &> /dev/null; then
 fi
 export XILINX_VIVADO_VERSION=$(vivado -version | grep -i Vivado | awk '{print $2}' | sed -E 's/v|\.[0-9]//g')
 
+# Check if uv is in path
+if ! command -v uv &> /dev/null; then
+    echo "[Error] Can't find uv in PATH!" >&2 ;
+fi
+
 #################
 # Configuration #
 #################

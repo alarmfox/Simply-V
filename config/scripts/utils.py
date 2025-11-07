@@ -1,4 +1,7 @@
-#!/bin/python3.10
+# /// script
+# dependencies = ["pandas"]
+# ///
+
 # Author: Manuel Maddaluno        <manuel.maddaluno@unina.it>
 # Description: utility functions to properly read the config CSV file
 
