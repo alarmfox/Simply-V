@@ -43,11 +43,11 @@ logic HBUS_clk;
 """
 
 
-def declare_and_assign_clocks_rtl(c: configuration.Configuration, fname: str) -> None:
+def declare_and_assign_clocks_rtl(config: configuration.Configuration) -> list:
     # Get (name: clock) data structure
     clock_domains = []
     # Navigate the 2 lists. Skip HBUS or DDR4CH* because they have their clock
-    for clock, name in zip(c.RANGE_CLOCK_DOMAINS, c.RANGE_NAMES):
+    for clock, name in zip(mbus_config.RANGE_CLOCK_DOMAINS, mbus_config.RANGE_NAMES):
         if name == "HBUS" or name.startswith("DDR4CH"):
             continue
         clock_domains.append(
@@ -56,17 +56,7 @@ def declare_and_assign_clocks_rtl(c: configuration.Configuration, fname: str) ->
                 "clock": clock,
             }
         )
-
-    template = Template(template_str)
-
-    rendered = template.render(
-        current_file_path=os.path.basename(__file__),
-        clock_domains=clock_domains,
-        main_clock_domain=config.MAIN_CLOCK_DOMAIN,
-    )
-
-    with open(RTL_FILES["UNINASOC"], "w") as f:
-        f.write(rendered)
+    return clock_domains
 
 
 ########
@@ -86,4 +76,16 @@ if __name__ == "__main__":
     if mbus_config is None:
         sys.exit(0)
 
-    ut.print_info("Output file is at " + RTL_FILES["UNINASOC"])
+    # Get clock domains
+    clock_domains = declare_and_assign_clocks_rtl(mbus_config)
+
+    template = Template(template_str)
+
+    rendered = template.render(
+        current_file_path=os.path.basename(__file__),
+        clock_domains=clock_domains,
+        main_clock_domain=config.MAIN_CLOCK_DOMAIN,
+    )
+
+    with open(RTL_FILES["UNINASOC"], "w") as f:
+        f.write(rendered)
