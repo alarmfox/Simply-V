@@ -39,7 +39,7 @@ CFLAGS  += $(INCLUDES)
 ###############################################################################################
 # Linker flags
 ###############################################################################################
-LDFLAGS  = -nostdlib -nostartfiles -lc -lgcc -Tlinker.ld
+LDFLAGS  = -nostdlib -nostartfiles -Tlinker.ld
 LDFLAGS += $(SW_SOC_ROOT)/lib/uninasoc/lib/libuninasoc.a $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
 
 ###############################################################################################
