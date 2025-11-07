@@ -22,7 +22,7 @@ size_t strlen(const char *s) {
     if (!s) return 0;
     const char *p = s;
 
-    while(*p != '\0') p++;
+    while (*p != '\0') p++;
 
     return (size_t) (p - s);
 }
