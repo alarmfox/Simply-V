@@ -108,4 +108,3 @@ class Configuration:
         # 	self.DATA_WIDTH = value
         # else:
         # 	logging.warning("Data Width value isn't compatible with AXI PROTOCOL Used. Using default value.")
-
