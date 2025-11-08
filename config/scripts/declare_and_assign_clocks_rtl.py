@@ -1,3 +1,7 @@
+# /// script
+# dependencies = ["pandas"]
+# ///
+
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Description: utility functions to write RTL file for CLOCKS declaration and assignments
 
