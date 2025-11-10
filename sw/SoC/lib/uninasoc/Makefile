@@ -7,9 +7,7 @@ UNINASOC_LIB_DIR := $(UNINASOC_DIR)/lib
 UNINASOC_LIB := $(UNINASOC_LIB_DIR)/libuninasoc.a
 UNINASOC_INC := $(UNINASOC_DIR)/inc
 TINY_IO_INC := $(SW_SOC_ROOT)/lib/tinyio/inc
-TINY_IO_LIB := $(wildcard $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a)
-TINY_IO_OBJ_DIR := $(SW_SOC_ROOT)/lib/uninasoc/lib/tinyio_obj
-TINY_IO_OBJS := $(wildcard $(TINY_IO_OBJ_DIR)/*.o)
+TINY_IO_LIB := $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
 
 include $(SW_ROOT)/SoC/common/config.mk
 
@@ -22,12 +20,15 @@ all: $(UNINASOC_LIB)
 
 # Build libuninasoc.a library
 $(UNINASOC_LIB): $(UNINASOC_OBJS)
-	@mkdir -p $(UNINASOC_LIB_DIR) $(TINY_IO_OBJ_DIR)
-	@echo "[OBJ] Extracting tinyio object files"
-	$(AR) -x $(TINY_IO_LIB) --output $(TINY_IO_OBJ_DIR)
-	@echo "[OBJ] Creating libuninasoc.a library"
-	$(AR) rcs $(UNINASOC_LIB) $(UNINASOC_OBJS)  $(wildcard $(TINY_IO_OBJ_DIR)/*.o)
-	@rm -f $(UNINASOC_OBJS)
+	@mkdir -p $(UNINASOC_LIB_DIR)
+	@echo "CREATE $@"> mri.tmp
+	@echo "ADDLIB $(TINY_IO_LIB)">> mri.tmp
+	@printf "ADDMOD %s\n" $(UNINASOC_OBJS) >> mri.tmp
+	@echo "SAVE" >> mri.tmp
+	@echo "END" >> mri.tmp
+	$(AR) -M < mri.tmp
+	@rm mri.tmp
+	@rm $(UNINASOC_OBJS)
 
 dump: $(UNINASOC_LIB)
 	$(OBJDUMP) -d $^ > lib/libuninasoc.dump
