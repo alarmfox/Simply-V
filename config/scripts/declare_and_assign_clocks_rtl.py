@@ -68,7 +68,7 @@ def render_clock_domains(clock_domains: list) -> str:
 ########
 if __name__ == "__main__":
     config_file_names = sys.argv[1:]
-    configs = ut.read_config(config_file_names)
+    configs = read_config(config_file_names)
     mbus_config: configuration.Configuration = None
 
     # Get the MBUS configuration

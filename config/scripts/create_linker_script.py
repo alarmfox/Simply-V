@@ -99,7 +99,6 @@ for i in range(len(NUM_MI)):
 
 device_dict = {
 	'memory':		[],
-	'peripheral':	[]
 }
 
 counter = 0
@@ -120,24 +119,30 @@ for i in range(len(RANGE_NAMES)):
                     }
                 )
 
-            # peripherals
-            case _:
-                # Check if the device is not a bus (the last three chars are not BUS)
-                if device[-3:] != "BUS":
-                    device_dict["peripheral"].append(
-                        {
-                            "device": device,
-                            "base": int(RANGE_BASE_ADDR[i][counter], 16),
-                            "range": 1 << RANGE_ADDR_WIDTH[i][counter],
-                        }
-                    )
-
         # Increment counter
         counter += 1
         # If we reach the last element of a bus we need to reset the counter to start with a new bus
         if counter == len(RANGE_NAMES[i]):
             counter = 0
 
+# Note: The memory size specified in the config.csv file may differ from the
+# physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
+# Currently, the configuration process does not ensure alignment between config.csv
+# and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
+# 32KB for now, based on the current setting in `config.tcl`.
+device_dict["global_symbols"] = [
+    # The stack is allocated at the end of first memory block
+    # _stack_end can be user-defined for the application, as bss and rodata
+    # _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
+    (
+        "_stack_start",
+        device_dict["memory"][BOOT_MEMORY_BLOCK]["base"]
+        + device_dict["memory"][BOOT_MEMORY_BLOCK]["range"]
+        - 0x10,
+    ),
+    ("_vector_table_start", device_dict["memory"][BOOT_MEMORY_BLOCK]["base"]),
+    ("_vector_table_end", device_dict["memory"][BOOT_MEMORY_BLOCK]["base"] + 32 * 4),
+]
 
 ###############################
 # Generate Linker Script File #
@@ -149,9 +154,6 @@ MEMORY
 {{
 {memory_block}
 }}
-
-/* Peripherals symbols */
-{peripheral_block}
 
 /* Global symbols */
 {globals_block}
@@ -178,17 +180,6 @@ SECTIONS
 """
 
 
-def render_peripherals(peripherals: list) -> str:
-    lines = []
-    for p in peripherals:
-        name = p["device"]
-        base = p["base"]
-        size = p["range"]
-        lines.append(f"_peripheral_{name}_start = 0x{base:016x}")
-        lines.append(f"_peripheral_{name}_end   = 0x{base + size:016x}")
-    return "\n".join(lines)
-
-
 def render_memory(memory: list) -> str:
     lines = []
     for m in memory:
@@ -207,14 +198,13 @@ def render_global_symbols(symbols: list) -> str:
     for s in symbols:
         name = s[0]
         value = s[1]
-        lines.append(f"{name} = 0x{value:016x}")
+        lines.append(f"{name} = 0x{value:016x};")
     return "\n".join(lines)
 
 
 if __name__ == "__main__":
     rendered = ld_template_str.format(
         current_file_path=os.path.basename(__file__),
-        peripheral_block=render_peripherals(device_dict["peripheral"]),
         memory_block=render_memory(device_dict["memory"]),
         globals_block=render_global_symbols(device_dict["global_symbols"]),
         initial_memory_name=device_dict["memory"][BOOT_MEMORY_BLOCK]["device"],
