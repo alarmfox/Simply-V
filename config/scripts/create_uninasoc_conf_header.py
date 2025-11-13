@@ -21,7 +21,7 @@ range_addr_width = []
 devices = set()
 
 for fname in config_file_names:
-    # Open the file whose path is stored in peripheral_csv_path
+    # Open the configuration files and parse them as csv
     with open(fname, "r") as file:
         reader = csv.reader(file)
 
