@@ -33,7 +33,7 @@ LD_SCRIPT     = ld/user.ld
 #############
 
 LIB_OBJ_UNINASOC  = $(LIB_DIR)/uninasoc/lib/libuninasoc.a
-LIB_INC_UNINASOC   = -I$(LIB_DIR)/uninasoc/inc
+LIB_INC_UNINASOC   = -I$(LIB_DIR)/uninasoc/inc -I$(LIB_DIR)/tinyio/inc
 
 LIB_OBJ_LIST     = $(LIB_OBJ_UNINASOC)
 LIB_INC_LIST     = $(LIB_INC_UNINASOC)

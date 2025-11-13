@@ -1,7 +1,5 @@
 #include "uninasoc.h"
 
-#include "tinyIO.h"
-
 void uninasoc_init()
 {
     extern const volatile uintptr_t _peripheral_UART_start;

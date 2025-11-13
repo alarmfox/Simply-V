@@ -29,6 +29,6 @@ $(error Unsupported XLEN value: $(XLEN))
 endif
 
 DFLAG ?= -g
-CFLAGS ?= -march=rv${XLEN}imac_zicsr_zifencei -mabi=${ABI} -O0 $(DFLAG) -c -fno-builtin
+CFLAGS ?= -march=rv${XLEN}imac_zicsr_zifencei -mabi=${ABI} -O0 $(DFLAG) -c
 LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib -T$(LD_SCRIPT)
 
