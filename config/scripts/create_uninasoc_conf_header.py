@@ -14,10 +14,10 @@ if len(sys.argv) != 5:
 config_file_names = sys.argv[1 : -1]
 output_hal_conf_file = sys.argv[-1]
 
-# List of device peripherals, needs to be a set to avoid duplicates
 range_names = []
 range_base_addr = []
 range_addr_width = []
+# List of device peripherals, needs to be a set to avoid duplicates
 devices = set()
 
 for fname in config_file_names:
@@ -35,9 +35,10 @@ for fname in config_file_names:
         base_addr = next(value.split(" ") for property, value in reader if property == "RANGE_BASE_ADDR")
         addr_width = next(value.split(" ") for property, value in reader if property == "RANGE_ADDR_WIDTH")
 
-        # take peripheral and add them to the devices set
+        # take peripherals and add them to the devices set
         if "peripheral" in fname:
             for name in names:
+                # Use a generic TIM to enable timer driver
                 if name.startswith("TIM"):
                     devices.add("TIM")
                 else:
@@ -48,8 +49,6 @@ for fname in config_file_names:
         range_base_addr += base_addr
         range_addr_width += addr_width
 
-
-print(range_names, range_base_addr, range_addr_width, sep="\n")
 
 # build the peripheral list
 peripherals = []
