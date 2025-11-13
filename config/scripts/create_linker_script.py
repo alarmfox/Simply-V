@@ -17,113 +17,70 @@ import sys
 # For basename
 import os
 # Manipulate CSV
-import pandas as pd
+import csv
 
 ##############
 # Parse args #
 ##############
 
 # CSV configuration file path
-config_file_names = [
-		'config/configs/embedded/config_main_bus.csv',
-		'config/configs/embedded/config_peripheral_bus.csv',
-		'config/configs/embedded/config_highperformance_bus.csv',
-	]
+if len(sys.argv) != 4:
+    print("Usage: <CONFIG_MAIN_BUS_CSV> <CONFIG_HIGH_PERFORMANCE_BUS_CSV> <OUTPUT_LD_FILE>")
+    sys.exit(1)
 
-if len(sys.argv) >= len(config_file_names)+1:
-	# Get the array of bus names from the second arg to the last but one
-	config_file_names = sys.argv[1:len(config_file_names)+1]
-
-# Target linker script file
-ld_file_name = 'sw/SoC/common/UninaSoC.ld'
-if len(sys.argv) >= 5:
-	# Get the linker script name, the last arg
-	ld_file_name = sys.argv[len(config_file_names)+1]
-
+# The last argument must be the output file
+config_file_names = sys.argv[1 : -1]
+ld_file_name = sys.argv[-1]
 
 ###############
 # Read config #
 ###############
 # Read CSV files for each bus
-config_dfs = []
-for name in config_file_names:
-	config_dfs.append(pd.read_csv(name, sep=",", index_col=0))
+range_names = []
+range_base_addr = []
+range_addr_width = []
 
-# Each bus has an element in these vectors
-NUM_MI = []
-RANGE_NAMES = []
-RANGE_BASE_ADDR = []
-RANGE_ADDR_WIDTH = []
-# For each bus
-for config_df in config_dfs:
+for fname in config_file_names:
+    # Open the configuration files and parse them as csv
+    with open(fname, "r") as file:
+        reader = csv.reader(file)
 
-	# Skip DISABLE buses
-	if config_df.loc["PROTOCOL"]["Value"] == "DISABLE":
-		continue
+        # next gets a single value
+        protocol = next(value for property, value in reader if property == "PROTOCOL")
+        if protocol == "DISABLE":
+            continue
 
-	# Read number of masters interfaces
-	NUM_MI.append(int(config_df.loc["NUM_MI"]["Value"]))
-	# print("[DEBUG] NUM_MI", NUM_MI)
+        range_names += next(value.split(" ") for property, value in reader if property == "RANGE_NAMES")
+        range_base_addr += next(value.split(" ") for property, value in reader if property == "RANGE_BASE_ADDR")
+        range_addr_width += next(value.split(" ") for property, value in reader if property == "RANGE_ADDR_WIDTH")
 
-	# Read slaves' names
-	RANGE_NAMES.append(config_df.loc["RANGE_NAMES"]["Value"].split())
-	# print("[DEBUG] RANGE_NAMES", RANGE_NAMES)
-
-	# Read address Ranges
-	RANGE_BASE_ADDR.append(config_df.loc["RANGE_BASE_ADDR"]["Value"].split())
-	# print("[DEBUG] RANGE_BASE_ADDR", RANGE_BASE_ADDR)
-
-	# Read address widths
-	RANGE_ADDR_WIDTH.append(config_df.loc["RANGE_ADDR_WIDTH"]["Value"].split())
-	# Turns the values into Integers
-	for i in range(len(RANGE_ADDR_WIDTH[-1])):
-		RANGE_ADDR_WIDTH[-1][i] = int(RANGE_ADDR_WIDTH[-1][i])
-
-# Currently the first memory device is selected as the boot memory device
-BOOT_MEMORY_BLOCK = 0x0
-
-
-################
-# Sanity check #
-################
-# For each bus
-for i in range(len(NUM_MI)):
-	assert (NUM_MI[i] == len(RANGE_NAMES[i])) & (NUM_MI[i] == len(RANGE_BASE_ADDR[i]) ) & (NUM_MI[i]  == len(RANGE_ADDR_WIDTH[i])), \
-		"Mismatch in lenght of configurations: NUM_MI(" + str(NUM_MI[i]) + "), RANGE_NAMES (" + str(len(RANGE_NAMES[i])) + \
-		"), RANGE_BASE_ADDR(" + str(len(RANGE_BASE_ADDR[i])) + ") RANGE_ADDR_WIDTH(" + str(len(RANGE_ADDR_WIDTH[i])) + ")"
 
 ##########################
 # Generate memory blocks #
 ##########################
 # Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
-
 device_dict = {
-	'memory':		[],
+    'memory': [],
 }
 
-counter = 0
-# For each bus
-for i in range(len(RANGE_NAMES)):
-    for device in RANGE_NAMES[i]:
-        match device:
-            # memory blocks
-            # TODO77: extend for multiple BRAMs
-            # TODO: tailor each memory block with specific permissions. Eg. BRAM (rx)
-            case d if d in {"BRAM", "HBM"} or d.startswith("DDR4CH"):
-                device_dict["memory"].append(
-                    {
-                        "device": device,
-                        "permissions": "xrw",
-                        "base": int(RANGE_BASE_ADDR[i][counter], 16),
-                        "range": 1 << RANGE_ADDR_WIDTH[i][counter],
-                    }
-                )
+# For each range_name, if it's  memory device (BRAM, HBM or starts with DDR4CH) add it to the map
+for name, base_addr, addr_width in zip(range_names, range_base_addr, range_addr_width):
+    # memory blocks
+    # TODO77: extend for multiple BRAMs
+    # TODO: tailor each memory block with specific permissions. Eg. BRAM (rx)
+    if name in ["BRAM", "HBM"] or name.startswith("DDR4CH"):
+        device_dict["memory"].append(
+            {
+                "device": name,
+                "permissions": "xrw",
+                "base": int(base_addr, 16),
+                "range": 1 << int(addr_width),
+            }
+        )
 
-        # Increment counter
-        counter += 1
-        # If we reach the last element of a bus we need to reset the counter to start with a new bus
-        if counter == len(RANGE_NAMES[i]):
-            counter = 0
+# Currently the first memory device is selected as the boot memory device
+BOOT_MEMORY_BLOCK = "BRAM"
+boot_memory_device = next(d for d in device_dict["memory"] if d["device"] == BOOT_MEMORY_BLOCK)
 
 # Note: The memory size specified in the config.csv file may differ from the
 # physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
@@ -136,12 +93,13 @@ device_dict["global_symbols"] = [
     # _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
     (
         "_stack_start",
-        device_dict["memory"][BOOT_MEMORY_BLOCK]["base"]
-        + device_dict["memory"][BOOT_MEMORY_BLOCK]["range"]
+        boot_memory_device["base"]
+        + boot_memory_device["range"]
+        # stack needs to be 16-byte aligned
         - 0x10,
     ),
-    ("_vector_table_start", device_dict["memory"][BOOT_MEMORY_BLOCK]["base"]),
-    ("_vector_table_end", device_dict["memory"][BOOT_MEMORY_BLOCK]["base"] + 32 * 4),
+    ("_vector_table_start", boot_memory_device["base"]),
+    ("_vector_table_end", boot_memory_device["base"] + 32 * 4),
 ]
 
 ###############################
@@ -207,9 +165,8 @@ if __name__ == "__main__":
         current_file_path=os.path.basename(__file__),
         memory_block=render_memory(device_dict["memory"]),
         globals_block=render_global_symbols(device_dict["global_symbols"]),
-        initial_memory_name=device_dict["memory"][BOOT_MEMORY_BLOCK]["device"],
+        initial_memory_name=boot_memory_device["device"],
     )
-
     # === Output to file ===
     with open(ld_file_name, "w") as f:
         f.write(rendered)
