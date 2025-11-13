@@ -1,4 +1,3 @@
-#!/bin/python3.10
 # Author: Stefano Toscano 		<stefa.toscano@studenti.unina.it>
 # Author: Vincenzo Maisto 		<vincenzo.maisto2@unina.it>
 # Author: Stefano Mercogliano 		<stefano.mercogliano@unina.it>
@@ -106,109 +105,121 @@ device_dict = {
 counter = 0
 # For each bus
 for i in range(len(RANGE_NAMES)):
-	for device in RANGE_NAMES[i]:
-		match device:
-			# memory blocks
-			# TODO77: extend for multiple BRAMs
-			case d if d in {"BRAM", "HBM"} or d.startswith("DDR4CH"):
-				device_dict['memory'].append({'device': device, 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
+    for device in RANGE_NAMES[i]:
+        match device:
+            # memory blocks
+            # TODO77: extend for multiple BRAMs
+            # TODO: tailor each memory block with specific permissions. Eg. BRAM (rx)
+            case d if d in {"BRAM", "HBM"} or d.startswith("DDR4CH"):
+                device_dict["memory"].append(
+                    {
+                        "device": device,
+                        "permissions": "xrw",
+                        "base": int(RANGE_BASE_ADDR[i][counter], 16),
+                        "range": 1 << RANGE_ADDR_WIDTH[i][counter],
+                    }
+                )
 
-			# peripherals
-			case _:
-				# Check if the device is not a bus (the last three chars are not BUS)
-				if device[-3:] != "BUS":
-					device_dict['peripheral'].append({'device': device, 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
+            # peripherals
+            case _:
+                # Check if the device is not a bus (the last three chars are not BUS)
+                if device[-3:] != "BUS":
+                    device_dict["peripheral"].append(
+                        {
+                            "device": device,
+                            "base": int(RANGE_BASE_ADDR[i][counter], 16),
+                            "range": 1 << RANGE_ADDR_WIDTH[i][counter],
+                        }
+                    )
 
-		# Increment counter
-		counter += 1
-		# If we reach the last element of a bus we need to reset the counter to start with a new bus
-		if counter == len(RANGE_NAMES[i]):
-			counter = 0
+        # Increment counter
+        counter += 1
+        # If we reach the last element of a bus we need to reset the counter to start with a new bus
+        if counter == len(RANGE_NAMES[i]):
+            counter = 0
 
 
 ###############################
 # Generate Linker Script File #
 ###############################
 
-# Create the Linker Script File
-fd = open(ld_file_name,  "w")
+ld_template_str = """/* Auto-generated with {current_file_path} */
 
-# Write header
-fd.write("/* This file is auto-generated with " + os.path.basename(__file__) + " */\n")
+MEMORY
+{{
+{memory_block}
+}}
 
-# Generate the memory blocks layout
-fd.write("\n")
-fd.write("/* Memory blocks */\n")
-fd.write("MEMORY\n")
-fd.write("{\n")
+/* Peripherals symbols */
+{peripheral_block}
 
-for block in device_dict['memory']:
-	fd.write("\t" + block['device'] + " (xrw) : ORIGIN = 0x" + format(block['base'], "016x") + ",  LENGTH = " + hex(block['range']) + "\n")
-fd.write("}\n")
+/* Global symbols */
+{globals_block}
 
-# Generate symbols from peripherals
-fd.write("\n")
-fd.write("/* Peripherals symbols */\n")
-for peripheral in device_dict['peripheral']:
-	fd.write("_peripheral_" + peripheral['device'] + "_start = 0x" + format(peripheral['base'], "016x") + ";\n")
-	fd.write("_peripheral_" + peripheral['device'] + "_end = 0x" + format(peripheral['base'] + peripheral['range'], "016x") + ";\n")
+SECTIONS
+{{
+    .vector_table _vector_table_start :
+    {{
+        KEEP(*(.vector_table))
+    }}> {initial_memory_name}
 
-# Generate global symbols
-fd.write("\n")
-fd.write("/* Global symbols */\n")
-# Vector table is placed at the beggining of the boot memory block.
-# It is aligned to 256 bytes and is 32 words deep. (as described in risc-v spec)
-#vector_table_start  =  memory_block_list[BOOT_MEMORY_BLOCK][DEVICE_ORIGIN]
-vector_table_start  =  device_dict['memory'][BOOT_MEMORY_BLOCK]['base']
-fd.write("_vector_table_start = 0x" + format(vector_table_start, "016x") + ";\n")
-fd.write("_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + ";\n")
-
-# The stack is allocated at the end of first memory block
-# _stack_end can be user-defined for the application, as bss and rodata
-# _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
-
-# Note: The memory size specified in the config.csv file may differ from the
-# physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
-# Currently, the configuration process does not ensure alignment between config.csv
-# and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
-# 32KB for now, based on the current setting in `config.tcl`.
-
-stack_start = device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x8
-fd.write("_stack_start = 0x" + format(stack_start, "016x") + ";\n")
-
-# Generate sections
-# vector table and text sections are here defined.
-# data, bss and rodata can be explicitly defined by the user application if required.
-fd.write("\n")
-fd.write("/* Sections */\n")
-fd.write("SECTIONS\n")
-fd.write("{\n")
-
-# Vector Table section
-fd.write("\t.vector_table _vector_table_start :\n")
-fd.write("\t{\n")
-fd.write("\t\tKEEP(*(.vector_table))\n")
-fd.write("\t}> " + device_dict['memory'][BOOT_MEMORY_BLOCK]['device'] + "\n")
-
-# Text section
-fd.write("\n")
-fd.write("\t.text :\n")
-fd.write("\t{\n")
-fd.write("\t\t. = ALIGN(32);\n")
-fd.write("\t\t_text_start = .;\n")
-fd.write("\t\t*(.text.handlers)\n")
-fd.write("\t\t*(.text.start)\n")
-fd.write("\t\t*(.text)\n")
-fd.write("\t\t*(.text*)\n")
-fd.write("\t\t. = ALIGN(32);\n")
-fd.write("\t\t_text_end = .;\n")
-fd.write("\t}> " + device_dict['memory'][BOOT_MEMORY_BLOCK]['device'] + "\n")
-
-fd.write("}\n")
-
-# Files closing
-fd.write("\n")
-fd.close()
+    .text :
+    {{
+        . = ALIGN(32);
+        _text_start = .;
+        *(.text.handlers)
+        *(.text.start)
+        *(.text)
+        *(.text*)
+        . = ALIGN(32);
+        _text_end = .;
+    }}> {initial_memory_name}
+}}
+"""
 
 
+def render_peripherals(peripherals: list) -> str:
+    lines = []
+    for p in peripherals:
+        name = p["device"]
+        base = p["base"]
+        size = p["range"]
+        lines.append(f"_peripheral_{name}_start = 0x{base:016x}")
+        lines.append(f"_peripheral_{name}_end   = 0x{base + size:016x}")
+    return "\n".join(lines)
 
+
+def render_memory(memory: list) -> str:
+    lines = []
+    for m in memory:
+        name = m["device"]
+        permissions = m["permissions"]
+        base = m["base"]
+        len = m["range"]
+        lines.append(
+            f"\t{name} ({permissions}): ORIGIN = 0x{base:016x}, LENGTH = 0x{len:0x}"
+        )
+    return "\n".join(lines)
+
+
+def render_global_symbols(symbols: list) -> str:
+    lines = []
+    for s in symbols:
+        name = s[0]
+        value = s[1]
+        lines.append(f"{name} = 0x{value:016x}")
+    return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    rendered = ld_template_str.format(
+        current_file_path=os.path.basename(__file__),
+        peripheral_block=render_peripherals(device_dict["peripheral"]),
+        memory_block=render_memory(device_dict["memory"]),
+        globals_block=render_global_symbols(device_dict["global_symbols"]),
+        initial_memory_name=device_dict["memory"][BOOT_MEMORY_BLOCK]["device"],
+    )
+
+    # === Output to file ===
+    with open(ld_file_name, "w") as f:
+        f.write(rendered)
