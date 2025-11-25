@@ -1,19 +1,26 @@
+/*
+ * This example shows a simple Task communication using Yield. Tasks have different priority and 
+ * do not share anything. This just demonstrated the basic FreeRTOS scheduler functionalities.
+ *
+ * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
+ */
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "uninasoc.h"
 
-#define TASK1_PRIORITY (tskIDLE_PRIORITY + 1)
-#define TASK2_PRIORITY (tskIDLE_PRIORITY + 1)
+#define BASIC_TASK1_YIELD_PRIORITY (tskIDLE_PRIORITY + 1)
+#define BASIC_TASK2_YIELD_PRIORITY (tskIDLE_PRIORITY + 2)
 
-#define TASK1_PARAMETER (1)
-#define TASK2_PARAMETER (2)
+#define BASIC_TASK1_YIELD_PARAMETER (1)
+#define BASIC_TASK2_YIELD_PARAMETER (2)
 
-static void Task1(void *pvParameters) {
+static void basicTaskYield1(void *pvParameters) {
 
   uint32_t a;
   uint32_t b = 3;
 
-  configASSERT(((uint32_t)pvParameters) == TASK1_PARAMETER);
+  configASSERT(((uint32_t)pvParameters) == BASIC_TASK1_YIELD_PARAMETER);
   size_t free_heap;
 
   while (1) {
@@ -29,14 +36,13 @@ static void Task1(void *pvParameters) {
   }
 }
 
-static void Task2(void *pvParameters) {
+static void basicTaskYield2(void *pvParameters) {
 
   uint32_t a;
   uint32_t b = 3;
 
-  configASSERT(((uint32_t)pvParameters) == TASK2_PARAMETER);
-  size_t free_heap = xPortGetFreeHeapSize();
-  configASSERT(free_heap > 0);
+  configASSERT(((uint32_t)pvParameters) == BASIC_TASK2_YIELD_PARAMETER);
+  size_t free_heap;
 
   while (1) {
     free_heap = xPortGetFreeHeapSize();
@@ -89,11 +95,11 @@ int main() {
   printf("================= SIMPLY-V Yield Example =================\n\r");
 
   // Create FreeRTOS Task
-  BaseType_t mem_1 = xTaskCreate(Task1, "t1", configMINIMAL_STACK_SIZE,
-                                 (void *)TASK1_PARAMETER, TASK1_PRIORITY, NULL);
+  BaseType_t mem_1 = xTaskCreate(basicTaskYield1, "t1", configMINIMAL_STACK_SIZE,
+                                 (void *)BASIC_TASK1_YIELD_PARAMETER, BASIC_TASK1_YIELD_PRIORITY, NULL);
 
-  BaseType_t mem_2 = xTaskCreate(Task2, "t2", configMINIMAL_STACK_SIZE,
-                                 (void *)TASK2_PARAMETER, TASK2_PRIORITY, NULL);
+  BaseType_t mem_2 = xTaskCreate(basicTaskYield2, "t2", configMINIMAL_STACK_SIZE,
+                                 (void *)BASIC_TASK2_YIELD_PARAMETER, BASIC_TASK2_YIELD_PRIORITY, NULL);
 
   configASSERT(mem_1 == pdPASS);
 
@@ -104,11 +110,9 @@ int main() {
   configASSERT(free_heap > 0);
   vTaskStartScheduler();
 
-  configASSERT(
-      0); // insufficient RAM->scheduler task returns->vAssertCalled() called
+  configASSERT(0); // insufficient RAM->scheduler task returns->vAssertCalled() called
 
-  while (1)
-    ;
+  while (1);
 
   return 0;
 }

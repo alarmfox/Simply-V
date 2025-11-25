@@ -1,11 +1,25 @@
+/*
+ *  This example shows a Producer-Consumer with a timer. The Producer is a periodic task which uses 
+ *  the `vTaskDelayUntil` promitives to suspend until the new period starts. The producer sends a 
+ *  counter which is increment by the passed as input. The Consumer receives the value and simulates some 
+ *  work with `vTaskDelay` primitive.
+ *
+ *  The System Timer in FreeRTOS using the Simply-V timer peripheral. The Simply-V timer peripheral is behind a PLIC. To enable and configure  the Timer 
+ *  we need to implement the `vPortSetupTimerInterrupt` (defined as weak and callend by the OS during initialization).
+ *  Finally, we need to provide `void freertos_risc_v_application_interrupt_handler` (defined as weak) and handle 
+ *  the timer interrupt. The handler routine should call the `vExternalTickIncrement` function to 
+ *  increment the System Tick (it will also call the context switch).
+ *
+ * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
+ */
+
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 
 #include "uninasoc.h"
 
-/*  =============================== Variables ================================
- */
+/*  =============================== Variables ================================ */
 static xlnx_tim_t timer = {.base_addr = TIM0_BASEADDR,
                            .counter = 200000,
                            .reload_mode = TIM_RELOAD_AUTO,
@@ -17,10 +31,9 @@ static QueueHandle_t xQueue = NULL;
 
 #define PRODUCER_PARAMETER (1)
 #define QUEUE_LENGTH (1)
-/*  =============================== Variables ================================
- */
 
-static void Producer(void *pvParameters) {
+/*  =============================== Functions ================================  */
+static void  queueProducerTaskTimer(void *pvParameters) {
 
   configASSERT(((uint32_t)pvParameters) == PRODUCER_PARAMETER);
 
@@ -34,7 +47,7 @@ static void Producer(void *pvParameters) {
 
   while (1) {
     counter += amt;
-    printf("Producer sending: %d \n\r", counter);
+    printf("[Producer Task]: sending: %d \n\r", counter);
 
     xQueueSend(xQueue, &counter, 0U);
 
@@ -43,7 +56,7 @@ static void Producer(void *pvParameters) {
   }
 }
 
-static void Consumer(void *pvParameters) {
+static void queueConsumerTaskTimer(void *pvParameters) {
   (void)pvParameters;
 
   uint32_t counter = 0;
@@ -51,7 +64,7 @@ static void Consumer(void *pvParameters) {
   while (1) {
 
     if (xQueueReceive(xQueue, &counter, portMAX_DELAY)) {
-      printf("Consumer received: %d\n\r", counter);
+      printf("[Consumer Task]: received %d\n\r", counter);
 
       // simulate some operation
       vTaskDelay(2);
@@ -59,7 +72,13 @@ static void Consumer(void *pvParameters) {
   }
 }
 
-// https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick
+/*
+ * Increment the SystemTick. If the increment unblocks a task, `xTaskIncrementTick` returns True.
+ * The task can be scheduled using `portYIELD_FROM_ISR` (*_FROM_ISR procedures are ok to call within 
+ * an ISR).
+ *
+ * https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick
+ */
 static void vExternalTickIncrement() {
   BaseType_t xSwitchRequired;
 
@@ -70,9 +89,17 @@ static void vExternalTickIncrement() {
   xSwitchRequired = xTaskIncrementTick();
 
   // If a task was unblocked, yield to it
-  if (xSwitchRequired != pdFALSE) { portYIELD_FROM_ISR(xSwitchRequired); }
+  if (xSwitchRequired != pdFALSE) { 
+    portYIELD_FROM_ISR(xSwitchRequired); 
+  }
+
 }
 
+/*
+ * This function overrides the default application_interrupt_handler (defined as weak). This is invoked when EVERY
+ * external trap arrives. This function polls the PLIC and increments the SystemTick when the timer is the source
+ * interrupted.
+ */
 void freertos_risc_v_application_interrupt_handler(uint32_t mcause) {
   (void)mcause;
 
@@ -112,9 +139,10 @@ void vApplicationMallocFailedHook(void) {
 }
 #endif // configUSE_MALLOC_FAILED_HOOK
 
-// define if you need to set the timer interrupt,otherwise an empty definition
-// is still necessary to overwrite the weak definition in port.c and to avoid
-// unwanted jumps to reset handler
+/*
+ * Configure an external timer as the system timer. Enables the PLIC that configures the timer peripheral,
+ * and enables the MEI (External interrupt) bit of the MIE register.
+ */
 void vPortSetupTimerInterrupt(void) {
   int ret;
   uint32_t priorities[3] = {1, 1, 1};
@@ -152,17 +180,16 @@ int main() {
 
   uninasoc_init();
 
-  printf("================= Simply-V Producer - Consumer with Timer "
-         "==================\n\r");
+  printf("================= Simply-V Producer - Consumer with Timer ==================\n\r");
 
   xQueue = xQueueCreate(QUEUE_LENGTH, sizeof(uint32_t));
   configASSERT(xQueue != NULL);
 
   BaseType_t mem_1 =
-      xTaskCreate(Producer, "Producer", configMINIMAL_STACK_SIZE,
+      xTaskCreate(queueProducerTaskTimer, "ProducerTaskTimer", configMINIMAL_STACK_SIZE,
                   (void *)PRODUCER_PARAMETER, PRODUCER_TASK_PRIORITY, NULL);
 
-  BaseType_t mem_2 = xTaskCreate(Consumer, "Consumer", configMINIMAL_STACK_SIZE,
+  BaseType_t mem_2 = xTaskCreate(queueConsumerTaskTimer, "ConsumerTaskTimer", configMINIMAL_STACK_SIZE,
                                  (void *)0, CONSUMER_TASK_PRIORITY, NULL);
 
   configASSERT(mem_1 == pdPASS);
@@ -174,11 +201,9 @@ int main() {
   configASSERT(free_heap > 0);
   vTaskStartScheduler();
 
-  configASSERT(
-      0); // insufficient RAM->scheduler task returns->vAssertCalled() called
+  configASSERT(0); // insufficient RAM->scheduler task returns->vAssertCalled() called
 
-  while (1)
-    ;
+  while (1);
 
   return 0;
 }

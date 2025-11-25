@@ -1,3 +1,14 @@
+/*
+ *  This example shows basic how to configure the System Timer in FreeRTOS using the Simply-V timer 
+ *  peripheral. The Simply-V timer peripheral is behind a PLIC. To enable and configure  the Timer 
+ *  we need to implement the `vPortSetupTimerInterrupt` (defined as weak and callend by the OS during initialization).
+ *  Finally, we need to provide `void freertos_risc_v_application_interrupt_handler` (defined as weak) and handle 
+ *  the timer interrupt. The handler routine should call the `vExternalTickIncrement` function to 
+ *  increment the System Tick (it will also call the context switch).
+ *
+ * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
+ */
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "uninasoc.h"
@@ -31,7 +42,13 @@ static void Task(void *pvParameters) {
   }
 }
 
-// https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick
+/*
+ * Increment the SystemTick. If the increment unblocks a task, `xTaskIncrementTick` returns True.
+ * The task can be scheduled using `portYIELD_FROM_ISR` (*_FROM_ISR procedures are ok to call within 
+ * an ISR).
+ *
+ * https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick
+ */
 static void vExternalTickIncrement() {
   BaseType_t xSwitchRequired;
 
@@ -42,9 +59,16 @@ static void vExternalTickIncrement() {
   xSwitchRequired = xTaskIncrementTick();
 
   // If a task was unblocked, yield to it
-  if (xSwitchRequired != pdFALSE) { portYIELD_FROM_ISR(xSwitchRequired); }
+  if (xSwitchRequired != pdFALSE) {
+    portYIELD_FROM_ISR(xSwitchRequired);
+  }
 }
 
+/*
+ * This function overrides the default application_interrupt_handler (defined as weak). This is invoked when EVERY
+ * external trap arrives. This function polls the PLIC and increments the SystemTick when the timer is the source
+ * interrupted.
+ */
 void freertos_risc_v_application_interrupt_handler(uint32_t mcause) {
   (void)mcause;
 
@@ -84,9 +108,10 @@ void vApplicationMallocFailedHook(void) {
 }
 #endif // configUSE_MALLOC_FAILED_HOOK
 
-// define if you need to set the timer interrupt,otherwise an empty definition
-// is still necessary to overwrite the weak definition in port.c and to avoid
-// unwanted jumps to reset handler
+/*
+ * Configure an external timer as the system timer. Enables the PLIC that configures the timer peripheral,
+ * and enables the MEI (External interrupt) bit of the MIE register.
+ */
 void vPortSetupTimerInterrupt(void) {
   int ret;
   uint32_t priorities[3] = {1, 1, 1};
@@ -123,8 +148,7 @@ void vPortSetupTimerInterrupt(void) {
 int main() {
 
   uninasoc_init();
-  printf("================= Simply-V Timer Example "
-         "==================\n\r");
+  printf("================= Simply-V Timer Example ""==================\n\r");
 
   // Create FreeRTOS Task
   BaseType_t res = xTaskCreate(Task, "task", configMINIMAL_STACK_SIZE,
@@ -140,8 +164,7 @@ int main() {
   // insufficient RAM->scheduler task returns->vAssertCalled() called
   configASSERT(0);
 
-  while (1)
-    ;
+  while (1);
 
   return 0;
 }

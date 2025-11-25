@@ -1,3 +1,12 @@
+/*
+ * This is the entrypoint for a FreeRTOS application. This just initializes the vector table writing
+ * for each entry a the address of the freertos_risc_v_trap_handler (this is needed because Simply-V 
+ * uses vectored mode for interrupts). Main `_reset_handler` zeroes out all registers, writes to MTVEC 
+ * the base address of the vector_table and jumps to `_start` which calls the `main`.
+ *
+ * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
+ */
+
     /* minimal startup.S for FreeRTOS-RISC-V */
     .extern freertos_risc_v_trap_handler
     .section .vector_table, "ax"
