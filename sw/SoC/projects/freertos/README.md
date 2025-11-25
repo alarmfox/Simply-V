@@ -45,8 +45,6 @@ make HEAP_PROFILE=3
 For now the SoC does not support a system timer. The SystemTick needs to be updated using a custom interrupt 
 handler. On the timer ISR we need to implement the logic decribed in the picture from [here](https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick).
 
-[![RTOS Tick](https://rcc.freertos.org/media/2018/TickISR.gif)](https://rcc.freertos.org/media/2018/TickISR.gif)
-
 This is done in the `vExternalTickIncrement()`:
 ```c
 static void vExternalTickIncrement() {
@@ -189,55 +187,4 @@ make DEBUG=1
 
 # or build single application in app/
 make DEBUG=1 timed-prod-cons
-```
-
-Load the application on the target:
-```sh
-?? () at startup.S:9
-9           jal x0, freertos_risc_v_trap_handler
-Loading section .vector_table, size 0x82 lma 0x0
-Loading section .text, size 0x8d60 lma 0x100
-Loading section .rodata, size 0x214 lma 0x8e60
-Loading section .srodata, size 0x18 lma 0x9078
-Loading section .data, size 0xc lma 0xa660
-Loading section .sdata, size 0x10 lma 0xa66c
-Start address 0x00000100, load size 36906
-Transfer rate: 54 KB/sec, 4613 bytes/write.
-(gdb) b main
-Breakpoint 1 at 0x548: file app/timed-prod-cons/main.c, line 153.
-(gdb) c
-Continuing.
-
-Breakpoint 1, main () at app/timed-prod-cons/main.c:153
-153         uninasoc_init();
-```
-
-## Development
-To ease the development process, users can use the following `.clangd` file to get completions in 
-editors like VSCode.
-
-```
-CompileFlags: 
-  Add:
-    - "-Ikernel/include/"
-    - "-Ikernel/portable/GCC/RISC-V/"
-    - "-Ikernel/portable/GCC/RISC-V/chip_specific_extensions/RISCV_no_extensions"
-    - "-Ikernel/include/"
-    - "-I../../lib/uninasoc/inc/"
-    - "-I../../lib/tinyio/inc/"
-```
-
-More advanced tools can require a `compile_commands.json` which can be generated using 
-[bear](https://github.com/rizsotto/Bear):
-
-```sh
-make clean
-bear -- make DEBUG=1
-```
-
-And include the `compile_commands.json` in the `.clangd` (this should be default):
-
-```
-CompileFlags: 
-  CompilationDatabase: .
 ```
