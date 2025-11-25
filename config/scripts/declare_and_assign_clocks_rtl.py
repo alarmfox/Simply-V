@@ -1,4 +1,5 @@
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
+# Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 # Description: utility functions to write RTL file for CLOCKS declaration and assignments
 
 ####################

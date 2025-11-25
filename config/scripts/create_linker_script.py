@@ -1,6 +1,7 @@
 # Author: Stefano Toscano 		<stefa.toscano@studenti.unina.it>
 # Author: Vincenzo Maisto 		<vincenzo.maisto2@unina.it>
 # Author: Stefano Mercogliano 		<stefano.mercogliano@unina.it>
+# Author: Giuseppe Capasso              <giuseppe.capasso17@studenti.unina.it>
 # Description:
 #   Generate a linker script file from the CSV configuration.
 # Note:
@@ -14,10 +15,15 @@
 ####################
 # Parse args
 import sys
+
 # For basename
 import os
+
 # Manipulate CSV
 import csv
+
+# Utils function
+import utils
 
 ##############
 # Parse args #
@@ -29,7 +35,7 @@ if len(sys.argv) != 4:
     sys.exit(1)
 
 # The last argument must be the output file
-config_file_names = sys.argv[1 : -1]
+config_file_names = sys.argv[1:-1]
 ld_file_name = sys.argv[-1]
 
 ###############
@@ -46,21 +52,21 @@ for fname in config_file_names:
         reader = csv.reader(file)
 
         # next gets a single value
-        protocol = next(value for property, value in reader if property == "PROTOCOL")
+        protocol = get_value_by_property(reader, "PROTOCOL")
         if protocol == "DISABLE":
             continue
 
-        range_names += next(value.split(" ") for property, value in reader if property == "RANGE_NAMES")
-        range_base_addr += next(value.split(" ") for property, value in reader if property == "RANGE_BASE_ADDR")
-        range_addr_width += next(value.split(" ") for property, value in reader if property == "RANGE_ADDR_WIDTH")
+        range_names += get_value_by_property(reader, "RANGE_NAMES").split(" ")
+        range_base_addr +== get_value_by_propert(reader, "RANGE_BASE_ADDR").split(" ")
+        range_base_addr +== get_value_by_propert(reader, "RANGE_ADDR_WIDTH").split(" ")
 
-
+ 
 ##########################
 # Generate memory blocks #
 ##########################
 # Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
 device_dict = {
-    'memory': [],
+    "memory": [],
 }
 
 # For each range_name, if it's  memory device (BRAM, HBM or starts with DDR4CH) add it to the map
@@ -138,7 +144,17 @@ SECTIONS
 """
 
 
-def render_memory(memory: list) -> str:
+# Render memory blocks as a string. Each memory object is defined as follows
+# {
+#   "device": name,
+#   "permissions": "xrw",
+#   "base": int(base_addr, 16),
+#   "range": 1 << int(addr_width),
+# }
+#
+# The output of the should be a string in the linkerscript format. Eg:
+# BRAM (xrw): ORIGIN = 0x0, LENGHTa = 0x10000
+def create_linker_render_memory(memory: list) -> str:
     lines = []
     for m in memory:
         name = m["device"]
@@ -151,7 +167,9 @@ def render_memory(memory: list) -> str:
     return "\n".join(lines)
 
 
-def render_global_symbols(symbols: list) -> str:
+# Render memory global symbols as a string. Each symbol is defined as (name, value) which produces
+# _stack_start = 0x000000000000fff0;
+def create_linker_render_glomal_symbols(symbols: list) -> str:
     lines = []
     for s in symbols:
         name = s[0]
@@ -161,12 +179,15 @@ def render_global_symbols(symbols: list) -> str:
 
 
 if __name__ == "__main__":
+    # The ld_template_str is a string which can be formatted (same as f-string). Provide {variable}
+    # as strings. This is why we call render_* functions
     rendered = ld_template_str.format(
         current_file_path=os.path.basename(__file__),
-        memory_block=render_memory(device_dict["memory"]),
+        memory_block=create_linker_render_memory(device_dict["memory"]),
         globals_block=render_global_symbols(device_dict["global_symbols"]),
         initial_memory_name=boot_memory_device["device"],
     )
-    # === Output to file ===
+
+    # Write the output
     with open(ld_file_name, "w") as f:
         f.write(rendered)

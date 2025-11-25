@@ -9,6 +9,7 @@ import pandas as pd
 # Sub-modules
 import configuration
 import parse_properties_wrapper
+import csv
 
 # Name of buses
 CONFIG_NAMES = {
@@ -65,3 +66,14 @@ def print_warning(txt : str) -> None:
 # print error
 def print_error(txt : str) -> None:
     print(f"{PRINT_PREFIX}{PRINT_ERROR_PREFIX} {txt}")
+
+
+#############
+# CSV Utils #
+#############
+
+# Retrieves the value of a property by the CSV Reader
+# @reader: a CSV reader object
+# @property_name: the name of a the property to retrieve
+def get_value_by_property(reader, property_name: str) -> str:
+    return next(value for property, value in reader if property == property_name)

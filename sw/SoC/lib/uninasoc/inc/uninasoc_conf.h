@@ -22,9 +22,9 @@
 #define _peripheral_TIM1_start  0x0000000000020620
 #define _peripheral_TIM1_end    0x0000000000020640
 
-#define TIM_IS_ENABLED 1
-#define UART_IS_ENABLED 1
 #define GPIO_IN_IS_ENABLED 1
+#define UART_IS_ENABLED 1
 #define GPIO_OUT_IS_ENABLED 1
+#define TIM_IS_ENABLED 1
 
 #endif // __UNINASOC_CONF_H__
