@@ -1,10 +1,10 @@
 /*
-    *** User-defined linker script ***
-
-    If you want to extend the UninaSoC.ld script, place here your code.
-    If you want to redefine your own linker script, remove the UninaSoC include.
-
-*/
+ * This is the linkerscript for FreeRTOS application. This includes the UninaSoC.ld and defines 
+ * the BSS and DATA section where FreeRTOS Heap and static variables will be allocated. Also it defies 
+ * the symbols for the stack and performs some checks.
+ *
+ * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
+ */
 
 INCLUDE ../../common/UninaSoC.ld
 
