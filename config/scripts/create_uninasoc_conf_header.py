@@ -28,14 +28,14 @@ for fname in config_file_names:
         reader = csv.reader(file)
 
         # next gets a single value
-        protocol = get_value_by_property(reader, "PROTOCOL")
+        protocol = utils.get_value_by_property(reader, "PROTOCOL")
         if protocol == "DISABLE":
             continue
 
         # read the rows we need
-        names = get_value_by_property(reader, "RANGE_NAMES")
-        base_addr = get_value_by_property(reader, "RANGE_BASE_ADDR")
-        addr_width = get_value_by_property(reader, "RANGE_ADDR_WIDTH")
+        names = utils.get_value_by_property(reader, "RANGE_NAMES")
+        base_addr = utils.get_value_by_property(reader, "RANGE_BASE_ADDR")
+        addr_width = utils.get_value_by_property(reader, "RANGE_ADDR_WIDTH")
 
         # take peripherals and add them to the devices set
         if "peripheral" in fname:

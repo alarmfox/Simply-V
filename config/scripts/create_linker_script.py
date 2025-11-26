@@ -1,6 +1,6 @@
-# Author: Stefano Toscano 		<stefa.toscano@studenti.unina.it>
-# Author: Vincenzo Maisto 		<vincenzo.maisto2@unina.it>
-# Author: Stefano Mercogliano 		<stefano.mercogliano@unina.it>
+# Author: Stefano Toscano               <stefa.toscano@studenti.unina.it>
+# Author: Vincenzo Maisto               <vincenzo.maisto2@unina.it>
+# Author: Stefano Mercogliano           <stefano.mercogliano@unina.it>
 # Author: Giuseppe Capasso              <giuseppe.capasso17@studenti.unina.it>
 # Description:
 #   Generate a linker script file from the CSV configuration.
@@ -52,15 +52,14 @@ for fname in config_file_names:
         reader = csv.reader(file)
 
         # next gets a single value
-        protocol = get_value_by_property(reader, "PROTOCOL")
+        protocol = utils.get_value_by_property(reader, "PROTOCOL")
         if protocol == "DISABLE":
             continue
 
-        range_names += get_value_by_property(reader, "RANGE_NAMES").split(" ")
-        range_base_addr += get_value_by_property(reader, "RANGE_BASE_ADDR").split(" ")
-        range_base_addr += get_value_by_property(reader, "RANGE_ADDR_WIDTH").split(" ")
+        range_names += utils.get_value_by_property(reader, "RANGE_NAMES").split(" ")
+        range_base_addr += utils.get_value_by_property(reader, "RANGE_BASE_ADDR").split(" ")
+        range_addr_width += utils.get_value_by_property(reader, "RANGE_ADDR_WIDTH").split(" ")
 
- 
 ##########################
 # Generate memory blocks #
 ##########################
@@ -184,7 +183,7 @@ if __name__ == "__main__":
     rendered = ld_template_str.format(
         current_file_path=os.path.basename(__file__),
         memory_block=create_linker_render_memory(device_dict["memory"]),
-        globals_block=render_global_symbols(device_dict["global_symbols"]),
+        globals_block=create_linker_render_glomal_symbols(device_dict["global_symbols"]),
         initial_memory_name=boot_memory_device["device"],
     )
 
