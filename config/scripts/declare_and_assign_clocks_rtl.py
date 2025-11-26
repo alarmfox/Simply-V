@@ -34,6 +34,11 @@ logic rstn_300MHz;
 logic HBUS_clk;
 """
 
+# For each entry in the configuration create a clock domain object:
+# {
+#   "name": name,
+#   "clock": clock
+# }
 def declare_and_assign_clocks_rtl(config: configuration.Configuration) -> list:
     # Get (name: clock) data structure
     clock_domains = []
@@ -50,6 +55,8 @@ def declare_and_assign_clocks_rtl(config: configuration.Configuration) -> list:
     return clock_domains
 
 
+# Create a string for each clock domain object in SV declaring the signal "logic name_clk" and assigning
+# the correct value to it
 def render_clock_domains(clock_domains: list) -> str:
     lines = []
     for c in clock_domains:
