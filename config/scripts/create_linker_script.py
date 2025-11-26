@@ -57,8 +57,8 @@ for fname in config_file_names:
             continue
 
         range_names += get_value_by_property(reader, "RANGE_NAMES").split(" ")
-        range_base_addr +== get_value_by_propert(reader, "RANGE_BASE_ADDR").split(" ")
-        range_base_addr +== get_value_by_propert(reader, "RANGE_ADDR_WIDTH").split(" ")
+        range_base_addr += get_value_by_property(reader, "RANGE_BASE_ADDR").split(" ")
+        range_base_addr += get_value_by_property(reader, "RANGE_ADDR_WIDTH").split(" ")
 
  
 ##########################
