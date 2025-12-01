@@ -6,7 +6,7 @@
  * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
  */
 
-INCLUDE ../../common/UninaSoC.ld
+INCLUDE ../../../../common/UninaSoC.ld
 
 /* 
 
