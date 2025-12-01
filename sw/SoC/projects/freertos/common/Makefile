@@ -18,13 +18,16 @@ include $(SW_SOC_ROOT)/common/config.mk
 ###############################################################################################
 # Project structure
 ###############################################################################################
-APP_DIR      := $(CURDIR)
-APP_NAME     := $(notdir $(CURDIR))
+APP_DIR          := $(CURDIR)
+APP_NAME         := $(notdir $(CURDIR))
 
-KERNEL_DIR   := $(SW_SOC_ROOT)/projects/freertos/FreeRTOS-Kernel
-HEAP_PROFILE ?= 1
+KERNEL_DIR       := $(SW_SOC_ROOT)/projects/freertos/FreeRTOS-Kernel
+HEAP_PROFILE     ?= 1
 
-BUILD_DIR := $(CURDIR)/build
+BUILD_DIR        := $(CURDIR)/build
+
+FREERTOS_COMMON  := $(SW_SOC_ROOT)/projects/freertos/common
+
 
 ###############################################################################################
 # Kernel sources (shared)
@@ -43,6 +46,7 @@ KERNEL_OBJS := $(KERNEL_OBJS:.S=.o)
 CFLAGS   += -Wall -Wextra -ffreestanding
 
 INCLUDES := -I$(APP_DIR) \
+	    -I$(FREERTOS_COMMON) \
             -I$(KERNEL_DIR)/include \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RISCV_no_extensions \
@@ -58,15 +62,16 @@ CFLAGS  += $(INCLUDES)
 ###############################################################################################
 # Linker flags
 ###############################################################################################
-LDFLAGS  = -nostdlib -nostartfiles -Tlinker.ld
+LDFLAGS  = -nostdlib -nostartfiles -T$(FREERTOS_COMMON)/linker.ld
 LDFLAGS += $(SW_SOC_ROOT)/lib/uninasoc/lib/libuninasoc.a $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
 
 ###############################################################################################
 # Application sources
 ###############################################################################################
-APP_SRCS := $(wildcard $(APP_DIR)/*.c) $(wildcard $(APP_DIR)/*.S)
-APP_OBJS := $(APP_SRCS:.c=.o)
-APP_OBJS := $(APP_OBJS:.S=.o)
+FREERTOS_STARTUP := $(FREERTOS_COMMON)/startup.S
+APP_SRCS         := $(wildcard $(APP_DIR)/*.c) $(wildcard $(APP_DIR)/*.S) $(FREERTOS_STARTUP)
+APP_OBJS         := $(APP_SRCS:.c=.o)
+APP_OBJS         := $(APP_OBJS:.S=.o)
 
 ###############################################################################################
 # Final artifacts
