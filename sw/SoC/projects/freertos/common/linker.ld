@@ -15,6 +15,7 @@ trap_vector_start is the base address for the interrupt handlers
 
 */
 
+/* let's assume this memory block is defined in UninaSoC.ld */
 __bram_end        = ORIGIN(BRAM) + LENGTH(BRAM);
 __stack_size      = 0x1000; /* 4k */
 __stack_bottom    = _stack_start - __stack_size;
