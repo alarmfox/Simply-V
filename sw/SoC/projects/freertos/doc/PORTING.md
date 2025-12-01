@@ -1,6 +1,6 @@
 ## Porting guide
 
-This guide contains details on how to port FreeRTOS on a RISC-V platform.
+This guide contains details on how to port FreeRTOS v11.2.0 on a RISC-V platform.
 
 ### System Tick Managemnet
 For now the Simply-V SoC does not support a system timer. The SystemTick needs to be updated using a custom interrupt 

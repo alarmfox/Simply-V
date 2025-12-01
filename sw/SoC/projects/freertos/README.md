@@ -22,6 +22,11 @@ documentation can be found here:
 
 ## Build an application
 
+First make sure you get the FreeRTOS sources:
+```sh
+make freertos
+```
+
 > [!Note]
 > Toolchain, architecture, ABI etc. are managed from `${ROOT_DIR}/sw/SoC/common/config.mk`. You can define your 
 custom RV_PREFIX by running something `make RV_PREFIX=<path-to-prefix> XLEN=<32-64>`
@@ -54,6 +59,9 @@ called when the malloc fails or when the stack overflows happens.
 
 In order for timers to work, users will need to configure CPU clock and TickRate accordingly:
 ```c
+/* This should align to the SoC CPU clock */
+#define configCPU_CLOCK_HZ                        ( ( unsigned long ) 20000000 )
+#define configTICK_RATE_HZ                         ( 50U )
 ```
 
 #### Heap configuration

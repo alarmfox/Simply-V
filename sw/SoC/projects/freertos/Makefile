@@ -1,4 +1,8 @@
-# This Makefile orchestrates application building by just invoking app/<app-name/Makefile
+# This Makefile orchestrates application building by just invoking app/<app-name/Makefile.
+#
+# Usage:
+#		make freertos # make sure the FreeRTOS-Kernel is cloned
+#   make RV_PREFIX # build all the applications
 #
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 
@@ -10,11 +14,16 @@ APP_DIR := app
 APPS    := $(notdir $(wildcard $(APP_DIR)/*))
 
 # default = build all apps
-all: $(APPS)
+all: freertos $(APPS)
 
 # call make inside app/<name>
 $(APPS):
 	@$(MAKE) -C $(APP_DIR)/$@ all
+
+# retrieve freertos source code
+freertos:
+	@echo "Retrieving FreeRTOS-Kernel code..."
+	@git submodule update --init --recursive FreeRTOS-Kernel
 
 # clean everything
 clean:
