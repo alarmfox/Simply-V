@@ -9,6 +9,10 @@
 #
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 
+ifndef ROOT_DIR
+$(error Setup script settings.sh has not been sourced, aborting)
+endif
+
 include ../../common/config.mk
 
 ###############################################################################################
