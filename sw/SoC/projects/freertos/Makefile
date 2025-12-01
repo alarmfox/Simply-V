@@ -1,11 +1,4 @@
-# This Makefile provides rules to compile and link application in app/ with the FreeRTOS kernel and 
-# the UninaSoC HAL. Applications are supposed to be in app/<app-name> and will be built in build/<app-name>.
-#
-# Users may want to customize the Heap Profile by passing HEAP_PROFILE to make variable (default is 1).
-#
-# Platform specific extensions need to be enabled in the $(KERNEL_DIR)/portable/GCC/RISC-V/chip_specific_extensions/
-# (default RISCV_no_extensions). Users may want to define extra variable in RISCV_no_extensions files
-# or to switch to another platform.
+# This Makefile orchestrates application building by just invoking app/<app-name/Makefile
 #
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 
