@@ -114,10 +114,9 @@ void vApplicationMallocFailedHook(void) {
  */
 void vPortSetupTimerInterrupt(void) {
   int ret;
-  uint32_t priorities[3] = {1, 1, 1};
 
   plic_init();
-  plic_configure(priorities, 3);
+  plic_configure_set_one(1, 2);
   plic_enable_all();
 
   xlnx_tim_init(&timer);
