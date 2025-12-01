@@ -1,8 +1,8 @@
-# This Makefile orchestrates application building by just invoking app/<app-name/Makefile.
+# This Makefile orchestrates the build of example application
 #
 # Usage:
-#		make freertos # make sure the FreeRTOS-Kernel is cloned
-#   make RV_PREFIX # build all the applications
+#		make freertos # Clone FreeRTOS-Kernel sources
+#		make all      # build all the applications
 #
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 
